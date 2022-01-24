@@ -2,13 +2,33 @@ const express = require("express");
 const port = process.env.PORT || 5500;
 const host = "127.0.0.1";
 
-const ask = [];
+// Include Order Matching Algorithm 
+const createOrderBook_result = require("./utils/ordermatch");
 
 // Initialising express app
 let app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
+
+
+// Create Seller Data
+let askData = [{
+    sellerName : "John",
+    name : "shoe",
+    price : 120,
+    quantity : 10
+},{
+    sellerName : "Bob",
+    name : "bag",
+    price : 200,
+    quantity : 5
+},{
+    sellerName : "Alice",
+    name : "soap",
+    price : 500,
+    quantity : 50
+}];
 
 // Routes
 // type - GET
@@ -21,9 +41,41 @@ app.use("/",express.static(__dirname + "/client"));
 app.post("/process",(request,response)=>{
     console.log(request.body);
 
-    response.json({
-        "message" : "success"
-    })
+    // Declare variables for each product parameter !
+    
+    let productName = request.body.name.toLowerCase();
+    let bidPrice = request.body.price;
+    let bidQuantity = request.body.quantity;
+
+    console.log("Product Name:",productName);
+    console.log("Price: ",bidPrice);
+    console.log("Quantity: ",bidQuantity);
+
+    // Product Existence Check
+    const productIndex = askData.findIndex((product)=> product.name === productName);
+
+    console.log("Index of the Product: ",productIndex);
+
+    // If product doesn't exists, not found response !
+    if(productIndex === -1){
+        response.status(404).json({
+            "message" : "Product Not Found !"
+        });
+    }else{
+        // Bid against seller's product !
+        // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity)
+        let bidQueue = createOrderBook_result(productName,Number(askData[productIndex].price),Number(askData[productIndex].quantity),Number(bidPrice),Number(bidQuantity));
+
+        if(bidQueue.length === 0){
+            response.status(200).json({
+                "message" : "Order Not Matched"
+            })
+        }else{
+            response.status(200).json({
+                "message" : "Congratulations, Order Matched"
+            })
+        }
+    }
 })
 
 // Listening to port and host (Basically kicks on the server)
