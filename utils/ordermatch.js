@@ -1,33 +1,133 @@
 let LimitOrder = require('limit-order-book').LimitOrder;
 let LimitOrderBook = require('limit-order-book').LimitOrderBook;
 
-function createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity){
+function createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity,partialPrice,partialQuantity){
     let orderAsk = new LimitOrder(order_name,"ask",askPrice,askQuantity);
-    let orderBid = new LimitOrder(order_name,"bid",bidPrice,bidQuantity);
+    let orderpartialBid = new LimitOrder(order_name,"bid",partialPrice, partialQuantity);
+    let ordernewBid = new LimitOrder(order_name,"bid",bidPrice,bidQuantity);
 
+    let newAskprice,newAskquantity;
+    let newQuantity = {};
+
+if(partialQuantity === 0){
+    // Check which type of order !
+    // Perfect Order
+    if(askPrice <= bidPrice && askQuantity >= bidQuantity){
+        // Do trade !
+        trade("perfect");
+        // Calculations !
+        newAskprice = bidPrice;
+        newAskquantity = askQuantity+2*partialQuantity;
+
+        newQuantity.name = order_name;
+        newQuantity.price = newAskprice;
+        newQuantity.quantity = newAskquantity;
+
+        return newQuantity;
+    }else if(askPrice <= bidPrice && askQuantity < bidQuantity){ //Partially matched order
+        // Do trade !
+        trade("partial");
+        // Calculations
+        newAskprice = bidPrice;
+        newAskquantity = askQuantity+2*partialQuantity;
+
+        newQuantity.name = order_name;
+        newQuantity.price = newAskprice;
+        newQuantity.quantity = newAskquantity;
+
+        return newQuantity;
+    }else{
+        return -1; // For invalid orders !
+    }
+
+}else{
+    // When order are simultaneous !
+
+    if(bidPrice >= askPrice){
+        trade("mixed");
+    }else{
+        return -1;
+    }
+}
+
+}
+
+function trade(order_type){
     let book = new LimitOrderBook();
 
     let result = book.add(orderAsk)
-        result = book.add(orderBid)
+        if(partialQuantity != 0) result = book.add(orderpartialBid) //In case of first trade for any product
+        result = book.add(ordernewBid)
 
+    
     console.log(book);
     console.log(book.bidLimits.queue);
     console.log(result);
 
-    return book.bidLimits.queue;
+    let quantityObj = {};
+
+    if(order_type === "perfect"){
+        quantityObj.price = result.taker.price;
+        quantityObj.size = result.taker.size;
+
+        return quantityObj;
+    }else if(order_type === "partial"){
+        console.log(book.bidLimits.queue);
+
+        quantityObj.price = book.bidLimits.queue[0].price;
+        quantityObj.size = book.bidLimits.queue[0].volume;
+
+        return quantityObj;
+
+    }
+
+    // return book.bidLimits.queue;
 }
 
 
-// let order1 = new LimitOrder("puma shoe", "ask", 120, 10)
-// let order2 = new LimitOrder("puma shoe", "bid",121,5)
+// let order1 = new LimitOrder("order", "ask", 500, 13);
+// let order2 = new LimitOrder("order", "bid", 500, 1); 
+// let order3 = new LimitOrder("order", "bid", 502, 15);
 
-// let book = new LimitOrderBook()
+// //Step1 ask - price - 500, quantity - askquantity + 2*partialquantity , partialprice - 500, partialquantity - 3
+// // Step 2
+
+// // update in the ask price and quantity
+// // update in the partial data !
+// // ask price = 1401, ask quantity = 101+1
+// // partial price = 1401, partial quantity = 1
+// // When order is invalid, then value of takesize and takevalue is zero !
+
+// let book = new LimitOrderBook();
 
 // let result = book.add(order1)
-//     result = book.add(order2)
+// result = book.add(order2)
+// result = book.add(order3)
 
-// console.log(book)
-// console.log(book.bidLimits.queue)
-// console.log(result)
+// console.log(book);
+// console.log(book.bidLimits.queue);
+// console.log(book.bidLimits.queue[0].price);
+// console.log(book.bidLimits.queue[0].volume);
+// console.log(result);
+// console.log(result.taker.price);
+// console.log(result.taker.size);
 
-module.exports = createOrderBook_result;
+// module.exports = createOrderBook_result;
+
+
+
+// Case 1
+// When order is matched
+// Condition - Price : askprice=<bidprice , quantity: askquantity=>bidquantity
+// Return - askprice = bidprice, askquantity = askquantity 
+
+// Case 2
+// When order is partially matched
+// Condition - Price : askprice=<bidprice , quantity : askquantity < bidquantity
+// Return - askprice = bidprice, quantity = bidquantity - askquantity
+
+
+// Case 3
+// When order is invalid
+// Condition - Price : askprice > bidprice
+// Return - 0

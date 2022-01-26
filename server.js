@@ -30,6 +30,8 @@ let askData = [{
     quantity : 50
 }];
 
+
+
 // Routes
 // type - GET
 // route - /home
@@ -66,14 +68,14 @@ app.post("/process",(request,response)=>{
         // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity)
         let bidQueue = createOrderBook_result(productName,Number(askData[productIndex].price),Number(askData[productIndex].quantity),Number(bidPrice),Number(bidQuantity));
 
-        if(bidQueue.length === 0){
+        if(bidQueue.length != 0){
             response.status(200).json({
                 "message" : "Order Not Matched"
-            })
+            });
         }else{
             response.status(200).json({
                 "message" : "Congratulations, Order Matched"
-            })
+            });
         }
     }
 })
