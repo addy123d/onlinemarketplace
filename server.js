@@ -30,7 +30,8 @@ let askData = [{
     quantity : 50
 }];
 
-
+// Create Partial Data Array !
+let partialData = [];
 
 // Routes
 // type - GET
@@ -66,17 +67,35 @@ app.post("/process",(request,response)=>{
     }else{
         // Bid against seller's product !
         // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity)
-        let bidQueue = createOrderBook_result(productName,Number(askData[productIndex].price),Number(askData[productIndex].quantity),Number(bidPrice),Number(bidQuantity));
+        // let bidQueue = createOrderBook_result(productName,Number(askData[productIndex].price),Number(askData[productIndex].quantity),Number(bidPrice),Number(bidQuantity));
 
-        if(bidQueue.length != 0){
-            response.status(200).json({
-                "message" : "Order Not Matched"
-            });
-        }else{
-            response.status(200).json({
-                "message" : "Congratulations, Order Matched"
-            });
-        }
+        //Check whether partial data is empty or not !
+        // if(partialData.length === 0){
+        //     // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity,partialPrice,partialQuantity)
+        //     let orderValues = createOrderBook_result();
+        // }else{
+
+        // }
+
+        // if(bidQueue.length != 0){
+        //     response.status(200).json({
+        //         "message" : "Order Not Matched"
+        //     });
+        // }else{
+        //     response.status(200).json({
+        //         "message" : "Congratulations, Order Matched"
+        //     });
+        // }
+
+        // First Case : 2 orders, perfectly matched !
+        // Second Case : 2 orders, partial matched!
+        // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity,partialPrice,partialQuantity)
+        let newValuesObj = createOrderBook_result(productName,Number(askData[productIndex].price),Number(askData[productIndex].quantity),Number(bidPrice),Number(bidQuantity),0,0);
+
+        console.log("New Value Object Generated: ");
+        console.log(newValuesObj);
+
+        response.send(newValuesObj.order_status);
     }
 })
 

@@ -8,32 +8,39 @@ function createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuan
 
     let newAskprice,newAskquantity;
     let newQuantity = {};
+    let quantityObj;
 
 if(partialQuantity === 0){
+    orderpartialBid = null;
     // Check which type of order !
     // Perfect Order
     if(askPrice <= bidPrice && askQuantity >= bidQuantity){
         // Do trade !
-        trade("perfect");
+        quantityObj = trade("perfect",orderAsk,orderpartialBid,ordernewBid);
         // Calculations !
-        newAskprice = bidPrice;
-        newAskquantity = askQuantity+2*partialQuantity;
+        newAskprice = quantityObj.price;
+        newAskquantity = quantityObj.size + 2*partialQuantity;
 
         newQuantity.name = order_name;
         newQuantity.price = newAskprice;
         newQuantity.quantity = newAskquantity;
+        newQuantity.order_status = "Order Matched";
 
         return newQuantity;
     }else if(askPrice <= bidPrice && askQuantity < bidQuantity){ //Partially matched order
         // Do trade !
-        trade("partial");
+        quantityObj = trade("partial",orderAsk,orderpartialBid,ordernewBid);
         // Calculations
-        newAskprice = bidPrice;
-        newAskquantity = askQuantity+2*partialQuantity;
+        newAskprice = quantityObj.price;
+        newAskquantity = askQuantity+2*quantityObj.size; 
+        // Here we are partial quantity with quantityObj.size because returned value is from, i.e it is a remaining value not total value.
 
         newQuantity.name = order_name;
         newQuantity.price = newAskprice;
         newQuantity.quantity = newAskquantity;
+        newQuantity.partialPrice = quantityObj.price;
+        newQuantity.partialQuantity = quantityObj.size;
+        newQuantity.order_status = "Order is Partially Completed";
 
         return newQuantity;
     }else{
@@ -44,7 +51,7 @@ if(partialQuantity === 0){
     // When order are simultaneous !
 
     if(bidPrice >= askPrice){
-        trade("mixed");
+        quantityObj = trade("mixed",orderAsk,orderpartialBid,ordernewBid);
     }else{
         return -1;
     }
@@ -52,11 +59,11 @@ if(partialQuantity === 0){
 
 }
 
-function trade(order_type){
+function trade(order_type,orderAsk,orderpartialBid,ordernewBid){
     let book = new LimitOrderBook();
 
     let result = book.add(orderAsk)
-        if(partialQuantity != 0) result = book.add(orderpartialBid) //In case of first trade for any product
+        if(orderpartialBid != null) result = book.add(orderpartialBid) //In case of first trade for any product
         result = book.add(ordernewBid)
 
     
@@ -68,10 +75,14 @@ function trade(order_type){
 
     if(order_type === "perfect"){
         quantityObj.price = result.taker.price;
-        quantityObj.size = result.taker.size;
+        quantityObj.size = result.makers[0].size;
+
+        console.log("Quantity Object: ");
+        console.log(quantityObj);
 
         return quantityObj;
     }else if(order_type === "partial"){
+        console.log("IT IS A PARTIAL ORDER !");
         console.log(book.bidLimits.queue);
 
         quantityObj.price = book.bidLimits.queue[0].price;
@@ -79,7 +90,25 @@ function trade(order_type){
 
         return quantityObj;
 
+    }else{
+        // Check whether order will be partial or perfectly matched !
+        if(bidQuantity > askQuantity){ //Order is partial !
+            console.log(book.bidLimits.queue);
+
+            quantityObj.price = book.bidLimits.queue[0].price;
+            quantityObj.size = book.bidLimits.queue[0].volume;
+    
+            return quantityObj;
+    
+        }else{ // Order is perfectly matched 
+            quantityObj.price = result.taker.price;
+            quantityObj.size = result.taker.size;
+    
+            return quantityObj;
+        }
     }
+
+
 
     // return book.bidLimits.queue;
 }
@@ -112,7 +141,7 @@ function trade(order_type){
 // console.log(result.taker.price);
 // console.log(result.taker.size);
 
-// module.exports = createOrderBook_result;
+module.exports = createOrderBook_result;
 
 
 
