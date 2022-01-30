@@ -65,37 +65,85 @@ app.post("/process",(request,response)=>{
             "message" : "Product Not Found !"
         });
     }else{
+
+        console.log("Seller's Array: ");
+        console.log(askData);
+
+        console.log("Partial Array: ");
+        console.log(partialData);
+
+
         // Bid against seller's product !
         // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity)
-        // let bidQueue = createOrderBook_result(productName,Number(askData[productIndex].price),Number(askData[productIndex].quantity),Number(bidPrice),Number(bidQuantity));
-
-        //Check whether partial data is empty or not !
-        // if(partialData.length === 0){
-        //     // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity,partialPrice,partialQuantity)
-        //     let orderValues = createOrderBook_result();
-        // }else{
-
-        // }
-
-        // if(bidQueue.length != 0){
-        //     response.status(200).json({
-        //         "message" : "Order Not Matched"
-        //     });
-        // }else{
-        //     response.status(200).json({
-        //         "message" : "Congratulations, Order Matched"
-        //     });
-        // }
 
         // First Case : 2 orders, perfectly matched !
         // Second Case : 2 orders, partial matched!
         // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity,partialPrice,partialQuantity)
-        let newValuesObj = createOrderBook_result(productName,Number(askData[productIndex].price),Number(askData[productIndex].quantity),Number(bidPrice),Number(bidQuantity),0,0);
 
-        console.log("New Value Object Generated: ");
-        console.log(newValuesObj);
+        let partialPrice = 0;
+        let partialQuantity = 0;
 
-        response.send(newValuesObj.order_status);
+        // Delete partial order if exists !
+        if(partialData.length != 0){
+            partialPrice = partialData[0].price;
+            partialQuantity = partialData[0].quantity;
+
+            // Delete Partial Data array !
+            partialData.splice(0,1);
+        }
+
+        console.log("Partial Price: ",partialPrice);
+        console.log("Partial Quantity: ",partialQuantity);
+
+        let newValuesObj = createOrderBook_result(productName,Number(askData[productIndex].price),Number(askData[productIndex].quantity),Number(bidPrice),Number(bidQuantity),Number(partialPrice),Number(partialQuantity));
+
+        if(newValuesObj === -1){
+            response.status(503).json({
+                message : "Order is invalid...try later !"
+            })
+        }else{  //When order matches or partially matches !
+            console.log("New Value Object Generated: ");
+            console.log(newValuesObj);
+
+            // Update Ask price if needed !
+            if(askData[productIndex].price != newValuesObj.price){
+                askData[productIndex].price = newValuesObj.price; //Updated values of price !
+            }
+
+            // Update quantity 
+            console.log("Ask Quantity: ",askData[productIndex].quantity);
+            console.log("New Object Quantity: ",newValuesObj.quantity);
+            if(askData[productIndex].quantity != newValuesObj.quantity){
+
+                console.log("Ready for partial Data !");
+                //Update quantity, insert partially matched item in partialData array !
+                askData[productIndex].quantity = newValuesObj.quantity; //Updated values of quantity !
+
+                if(newValuesObj.order_status === "Order is Partially Completed"){
+                    // Partial Data !
+                    let partialItemObject = {
+                        sellerName : askData[productIndex].sellerName,
+                        name : newValuesObj.name,
+                        price : newValuesObj.partialPrice,
+                        quantity : newValuesObj.partialQuantity
+                    }
+
+                    partialData.push(partialItemObject);
+                }
+
+
+            }
+
+            console.log("Seller's Array: ");
+            console.log(askData);
+    
+            console.log("Partial Array: ");
+            console.log(partialData);
+    
+            response.send(newValuesObj.order_status);
+        }
+
+
     }
 })
 

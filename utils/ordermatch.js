@@ -50,9 +50,46 @@ if(partialQuantity === 0){
 }else{
     // When order are simultaneous !
 
-    if(bidPrice >= askPrice){
-        quantityObj = trade("mixed",orderAsk,orderpartialBid,ordernewBid);
-    }else{
+    if((bidQuantity > askQuantity) || ((bidQuantity + partialQuantity) > askQuantity)){
+        quantityObj = trade("mixed_partial",orderAsk,orderpartialBid,ordernewBid);
+
+        console.log("First Check for partial Mixed");
+        console.log(quantityObj);
+
+          // Calculations
+          newAskprice = quantityObj.price;
+          newAskquantity = askQuantity+2*quantityObj.size; 
+          // Here we are partial quantity with quantityObj.size because returned value is from, i.e it is a remaining value not total value.
+  
+          newQuantity.name = order_name;
+          newQuantity.price = newAskprice;
+          newQuantity.quantity = newAskquantity;
+          newQuantity.partialPrice = quantityObj.price;
+          newQuantity.partialQuantity = quantityObj.size;
+          newQuantity.order_status = "Order is Partially Completed";
+  
+          return newQuantity;
+
+    }else if(bidQuantity <= askQuantity){
+        quantityObj = trade("mixed_match",orderAsk,orderpartialBid,ordernewBid);
+
+        console.log("Quantity Object: ");
+        console.log(quantityObj);
+        console.log(partialQuantity);
+
+          // Calculations !
+          newAskprice = quantityObj.price;
+          newAskquantity = quantityObj.size + 2*partialQuantity;
+  
+          newQuantity.name = order_name;
+          newQuantity.price = newAskprice;
+          newQuantity.quantity = newAskquantity;
+          newQuantity.order_status = "Order Matched";
+  
+          return newQuantity;
+
+    }
+    else{
         return -1;
     }
 }
@@ -92,7 +129,8 @@ function trade(order_type,orderAsk,orderpartialBid,ordernewBid){
 
     }else{
         // Check whether order will be partial or perfectly matched !
-        if(bidQuantity > askQuantity){ //Order is partial !
+        if(order_type === "mixed_partial"){ //Order is partial !
+            console.log("Second Check for partial mixed !");
             console.log(book.bidLimits.queue);
 
             quantityObj.price = book.bidLimits.queue[0].price;
@@ -101,6 +139,7 @@ function trade(order_type,orderAsk,orderpartialBid,ordernewBid){
             return quantityObj;
     
         }else{ // Order is perfectly matched 
+            console.log("Check for Mixed Matched!");
             quantityObj.price = result.taker.price;
             quantityObj.size = result.taker.size;
     
@@ -114,9 +153,9 @@ function trade(order_type,orderAsk,orderpartialBid,ordernewBid){
 }
 
 
-// let order1 = new LimitOrder("order", "ask", 500, 13);
-// let order2 = new LimitOrder("order", "bid", 500, 1); 
-// let order3 = new LimitOrder("order", "bid", 502, 15);
+// let order1 = new LimitOrder("order", "ask", 124, 18);
+// let order2 = new LimitOrder("order", "bid", 124, 2); 
+// let order3 = new LimitOrder("order", "bid", 125, 17);
 
 // //Step1 ask - price - 500, quantity - askquantity + 2*partialquantity , partialprice - 500, partialquantity - 3
 // // Step 2
@@ -135,8 +174,8 @@ function trade(order_type,orderAsk,orderpartialBid,ordernewBid){
 
 // console.log(book);
 // console.log(book.bidLimits.queue);
-// console.log(book.bidLimits.queue[0].price);
-// console.log(book.bidLimits.queue[0].volume);
+// // console.log(book.bidLimits.queue[0].price);
+// // console.log(book.bidLimits.queue[0].volume);
 // console.log(result);
 // console.log(result.taker.price);
 // console.log(result.taker.size);
