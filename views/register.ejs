@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+</head>
+<body>
+    <h2>Register</h2>
+    <form action="/register" method="POST">
+        <input type="text" name="name" placeholder="Name" autocomplete="off">
+        <input type="email" name="email" placeholder="Email" autocomplete="off">
+        <input type="password" id="password" name="password" placeholder="Password" autocomplete="off">
+        <button>Sign Up</button>
+    </form>
+    
+    <button class="showPassword">Show password 👁</button>
+</body>
+<script>
+    const showPassword = document.querySelector(".showPassword");
+    const password = document.querySelector("#password");
+
+    showPassword.addEventListener("click",()=>{
+        password.setAttribute("type","text");
+    })
+</script>
+</html>

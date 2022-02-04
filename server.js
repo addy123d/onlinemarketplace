@@ -1,15 +1,64 @@
 const express = require("express");
+const mongo = require("mongoose");
+const session = require('express-session');
+const dbConfiguration = require("./setup/config");
+const ejs = require("ejs");
 const port = process.env.PORT || 5500;
 const host = "127.0.0.1";
 
+// Import Tables !
+const User = require("./tables/User");
+
 // Include Order Matching Algorithm 
 const createOrderBook_result = require("./utils/ordermatch");
+const { request } = require("express");
+
+// Connect our Mongo DB Database !
+mongo.connect(dbConfiguration.url) //Why using then-catch, to avoid code crash and
+    .then(()=>{ //If successfully resolved !
+        console.log("Database Successfully connected !");
+    })
+    .catch(err=>{  //If any error occurs !
+        console.log("Error: error in connecting with database !",err);
+    });
 
 // Initialising express app
 let app = express();
 
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
+
+app.set("view engine","ejs");
+
+app.set('trust proxy', 1) // trust first proxy
+app.use(session({
+  name : "user",
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false,httpOnly: true,path:"/" }
+}))
+
+// Protected Functions !
+
+function unauthenticated(request,response,next){
+    console.log(request.session);
+
+    if(request.session.email != undefined){
+        next();
+    }else{
+        response.redirect("/login");
+    }
+}
+
+function authenticated(request,response,next){
+    if(request.session.email){
+        response.redirect("/dashboard");
+    }else{
+       next(); 
+    }
+}
 
 
 // Create Seller Data
@@ -38,6 +87,100 @@ let partialData = [];
 // route - /home
 // ip:port/home
 app.use("/",express.static(__dirname + "/client"));
+
+// 
+app.get("/register",authenticated,(request,response)=>{
+    console.log(request.session);
+    response.render("register");
+});
+
+
+app.get("/login",authenticated,(request,response)=>{
+    response.render("login");
+});
+
+app.post("/register",(request,response)=>{
+    console.log(request.body);
+
+    const {name, email, password} = request.body;
+
+    // Query Database
+
+    User.findOne({email : email})
+        .then((person)=>{
+            if(person){
+                // If email already exists !, our email matches with any mail in the document 
+                response.status(503).json({
+                    "message" : "Email ID already registered"
+                })
+            }else{
+                // This is our first time user, so save his/her data !
+                // @TODO - ADD TIMESTAMP
+                let userObj = {
+                    name : name,
+                    email : email,
+                    password : password
+                }
+
+                new User(userObj).save()
+                    .then((user)=>{
+                        console.log("User registered successfully !");
+
+                        request.session.email = user.email;
+                        request.session.password = user.password;
+
+                        console.log("Session: ");
+                        console.log(request.session);
+
+                        response.status(200).json({
+                            message : "Registered Successfully"
+                        });
+                    })
+                    .catch(err=>console.log("Error: ",err));
+            }
+        })
+        .catch(err=>console.log("Error: ",err));
+
+
+})
+
+app.post("/login",(request,response)=>{
+    console.log(request.body);
+
+    const {email,password} = request.body;
+
+    // Query Database
+
+    User.findOne({email : email})
+        .then((person)=>{
+            if(person){
+                // Match password 
+                if(password === person.password){
+
+                    request.session.email = person.email;
+                    request.session.password = person.password;
+
+                    console.log("Session: ");
+                    console.log(request.session);
+
+                    response.status(200).json({
+                        message : "success"
+                    })
+                }else{
+                    response.status(200).json({
+                        message : "Password not matched !"
+                    })
+                }
+            }else{
+                response.status(503).json({
+                    message : "Email not registered"
+                })
+            }
+        })
+        .catch(err=>console.log("Error: ",err));
+
+
+})
 
 // type - POST
 // route - /process
@@ -145,6 +288,17 @@ app.post("/process",(request,response)=>{
 
 
     }
+})
+
+app.get("/dashboard",unauthenticated,(request,response)=>{
+    response.send("<h1>Dashboard</h1>");
+});
+
+app.get("/logout",unauthenticated,(request,response)=>{
+    request.session.destroy(function(err) {
+        // cannot access session here
+        response.redirect("/login")
+      });
 })
 
 // Listening to port and host (Basically kicks on the server)
