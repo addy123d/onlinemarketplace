@@ -9,6 +9,16 @@
 <body>
     <h1>Online Marketplace 👟</h1>
 
+    <%if(sessionStatus){%>
+        <div class="sellerMode">
+            <a href="/sellerdashboard"><button>Want to sell ?</button></a>
+        </div>
+    <%}else{%>
+        <div class="sellerMode">
+            <a href="/login"><button>Sign In</button></a>
+        </div>
+    <%}%>
+
     <h2>Buyer Side</h2>
 
     <!-- Form -->

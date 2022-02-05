@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard</title>
+</head>
+<body>
+        <input type="text" name="productName" class="productName" placeholder="Product Name" autocomplete="off">
+        <input type="text" name="productPrice" class="productPrice" placeholder="Price" autocomplete="off">
+        <input type="text" name="productQuantity" class="productQuantity" placeholder="Quantity" autocomplete="off">
+        <button class="addProduct_button">Add</button>
+</body>
+<script>
+    const product_name = document.querySelector(".productName");
+    const product_price = document.querySelector(".productPrice");
+    const product_quantity = document.querySelector(".productQuantity");
+
+    const addButton = document.querySelector(".addProduct_button");
+
+    addButton.addEventListener("click",()=>{
+        let options = {
+            method : "POST",
+            body : JSON.stringify({
+                ProductName : product_name.value,
+                ProductPrice : product_price.value,
+                ProductQuantity : product_quantity.value
+            }),
+            headers : new Headers({
+                'Content-Type' : 'application/json'
+            })
+        }
+
+        fetch('/askData',options)
+            .then((response)=>response.json())
+            .then((result)=>{
+                alert(result.message);
+
+                product_name.value = "";
+                product_price.value = "";
+                product_quantity.value = "";
+            })
+            .catch(err=>console.error("Error: ",err));
+    });
+</script>
+</html>

@@ -8,10 +8,13 @@ const host = "127.0.0.1";
 
 // Import Tables !
 const User = require("./tables/User");
+const Seller = require("./tables/Seller");
+const Product = require("./tables/Products");
 
 // Include Order Matching Algorithm 
 const createOrderBook_result = require("./utils/ordermatch");
 const { request } = require("express");
+const Products = require("./tables/Products");
 
 // Connect our Mongo DB Database !
 mongo.connect(dbConfiguration.url) //Why using then-catch, to avoid code crash and
@@ -54,7 +57,7 @@ function unauthenticated(request,response,next){
 
 function authenticated(request,response,next){
     if(request.session.email){
-        response.redirect("/dashboard");
+        response.redirect("/");
     }else{
        next(); 
     }
@@ -86,9 +89,17 @@ let partialData = [];
 // type - GET
 // route - /home
 // ip:port/home
-app.use("/",express.static(__dirname + "/client"));
+// app.use("/",express.static(__dirname + "/client"));
 
-// 
+app.get("/",(request,response)=>{
+
+    let sessionStatus = false;
+
+    if(request.session.email != undefined) sessionStatus = true;
+
+    response.render("index",{sessionStatus});
+})
+
 app.get("/register",authenticated,(request,response)=>{
     console.log(request.session);
     response.render("register");
@@ -126,15 +137,18 @@ app.post("/register",(request,response)=>{
                     .then((user)=>{
                         console.log("User registered successfully !");
 
+                        request.session.user_name = user.name;
                         request.session.email = user.email;
                         request.session.password = user.password;
 
                         console.log("Session: ");
                         console.log(request.session);
 
-                        response.status(200).json({
-                            message : "Registered Successfully"
-                        });
+                        response.status(200).redirect("/");
+
+                        // response.status(200).json({
+                        //     message : "Registered Successfully"
+                        // });
                     })
                     .catch(err=>console.log("Error: ",err));
             }
@@ -157,15 +171,18 @@ app.post("/login",(request,response)=>{
                 // Match password 
                 if(password === person.password){
 
+                    request.session.user_name = person.name;
                     request.session.email = person.email;
                     request.session.password = person.password;
 
                     console.log("Session: ");
                     console.log(request.session);
 
-                    response.status(200).json({
-                        message : "success"
-                    })
+                    response.status(200).redirect("/");
+
+                    // response.status(200).json({
+                    //     message : "success"
+                    // })
                 }else{
                     response.status(200).json({
                         message : "Password not matched !"
@@ -182,10 +199,105 @@ app.post("/login",(request,response)=>{
 
 })
 
+app.post("/askData",(request,response)=>{
+    let {ProductName, ProductPrice, ProductQuantity} = request.body;
+    ProductName = ProductName.toLowerCase();
+    ProductPrice = Number(ProductPrice);
+    ProductQuantity = Number(ProductQuantity);
+
+    if(ProductName != "" && ProductPrice != "" && ProductQuantity != ""){
+        // Add products in seller data !
+        // Step-1 : Will check for product name uniqueness
+        // Step-2 : Add user as a seller in seller table
+        // Step-3 : Store same product in products table simultaneously!
+        Products.findOne({productName : ProductName})
+            .then((product)=>{
+                if(product){
+                    response.status(503).json({
+                        message : "Product already exists !"
+                    })
+                }else{
+                    // Check whether user is first time seller or not !
+                    Seller.findOne({email : request.session.email})
+                        .then((seller)=>{
+                            if(seller){
+                                // Update his/her products !
+                                Seller.updateOne({
+                                    email : request.session.email
+                                },{
+                                    $push : {
+                                        products : {ProductName,ProductPrice,ProductQuantity}
+                                    }
+                                },{
+                                    $new : true
+                                })
+                                .then(()=>{
+                                    let productObject = {
+                                        seller_name : request.session.user_name,
+                                        email : request.session.email,
+                                        productName : ProductName,
+                                        productPrice : ProductPrice,
+                                        productQuantity : ProductQuantity
+                                    }
+
+                                    new Product(productObject).save()
+                                        .then(()=>{
+                                            response.status(200).json({
+                                                message : "Success ✔"
+                                            })
+                                        })
+                                        .catch(err=>console.log("Error: ",err));
+                                })
+                                .catch(err=>console.log("Error: ",err));
+                            }else{
+                                // Create new Document for seller
+
+                                const newSellerObject = {
+                                    seller_name : request.session.user_name,
+                                    email : request.session.email,
+                                    products : [{ProductName,ProductPrice,ProductQuantity}]
+                                }
+
+                                new Seller(newSellerObject).save()
+                                    .then(()=>{
+
+                                        let productObject = {
+                                            seller_name : request.session.user_name,
+                                            email : request.session.email,
+                                            productName : ProductName,
+                                            productPrice : ProductPrice,
+                                            productQuantity : ProductQuantity
+                                        }
+
+                                        new Product(productObject).save()
+                                            .then(()=>{
+                                                response.status(200).json({
+                                                    message : "Success ✔"
+                                                })
+                                            })
+                                            .catch(err=>console.log("Error: ",err));
+
+                                    })
+                                    .catch(err=>console.log("Error: ",err));
+                            }
+                        })
+                        .catch(err=>console.log("Error: ",err));
+                }
+            })
+            .catch(err=>console.log("Error: ",err));
+    }else{
+        response.status(503).json({
+            message : "Values Missing !!!"
+        })
+    }
+});
+
 // type - POST
 // route - /process
 app.post("/process",(request,response)=>{
-    console.log(request.body);
+
+    if(request.session.email != undefined){
+        console.log(request.body);
 
     // Declare variables for each product parameter !
     
@@ -288,10 +400,15 @@ app.post("/process",(request,response)=>{
 
 
     }
+    }else{
+        response.status(200).redirect("/login");
+    }
+
+    
 })
 
-app.get("/dashboard",unauthenticated,(request,response)=>{
-    response.send("<h1>Dashboard</h1>");
+app.get("/sellerdashboard",unauthenticated,(request,response)=>{
+    response.render("sellerdashboard");
 });
 
 app.get("/logout",unauthenticated,(request,response)=>{
