@@ -24,7 +24,7 @@ if(partialQuantity === 0){
         newQuantity.name = order_name;
         newQuantity.price = newAskprice;
         newQuantity.quantity = newAskquantity;
-        newQuantity.order_status = "Order Matched";
+        newQuantity.order_code = 200;
 
         return newQuantity;
     }else if(askPrice <= bidPrice && askQuantity < bidQuantity){ //Partially matched order
@@ -40,7 +40,7 @@ if(partialQuantity === 0){
         newQuantity.quantity = newAskquantity;
         newQuantity.partialPrice = quantityObj.price;
         newQuantity.partialQuantity = quantityObj.size;
-        newQuantity.order_status = "Order is Partially Completed";
+        newQuantity.order_code = 201;
 
         return newQuantity;
     }else{
@@ -66,7 +66,7 @@ if(partialQuantity === 0){
           newQuantity.quantity = newAskquantity;
           newQuantity.partialPrice = quantityObj.price;
           newQuantity.partialQuantity = quantityObj.size;
-          newQuantity.order_status = "Order is Partially Completed";
+          newQuantity.order_code = 201;
   
           return newQuantity;
 
@@ -84,7 +84,7 @@ if(partialQuantity === 0){
           newQuantity.name = order_name;
           newQuantity.price = newAskprice;
           newQuantity.quantity = newAskquantity;
-          newQuantity.order_status = "Order Matched";
+          newQuantity.order_code = 200;
   
           return newQuantity;
 

@@ -10,10 +10,24 @@ const sellerSchema = new schema({
         type: String,
         required: true
     },
-    products : {
-        type : [Object],
-        required: true
-    }
+    // products : {
+    //     type : [Object],
+    //     required: true
+    // }
+    products : [{
+        productName : {
+            type : String,
+            required  :true
+        },
+        productPrice : {
+            type : Number,
+            required  :true
+        },
+        productQuantity : {
+            type : Number,
+            required  :true
+        }
+    }]
 })
 
 module.exports = Seller = mongo.model("Seller",sellerSchema);
