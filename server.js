@@ -65,23 +65,6 @@ function authenticated(request, response, next) {
 }
 
 
-// Create Seller Data
-// let askData = [{
-//     sellerName : "John",
-//     name : "shoe",
-//     price : 120,
-//     quantity : 10
-// },{
-//     sellerName : "Bob",
-//     name : "bag",
-//     price : 200,
-//     quantity : 5
-// },{
-//     sellerName : "Alice",
-//     name : "soap",
-//     price : 500,
-//     quantity : 50
-// }];
 
 // Create Partial Data Array !
 let partialData = [];
@@ -123,7 +106,8 @@ app.post("/register", (request, response) => {
             if (person) {
                 // If email already exists !, our email matches with any mail in the document 
                 response.status(503).json({
-                    "message": "Email ID already registered"
+                    "message": "Email ID already registered",
+                    responseCode : 503
                 })
             } else {
                 // This is our first time user, so save his/her data !
@@ -145,11 +129,9 @@ app.post("/register", (request, response) => {
                         console.log("Session: ");
                         console.log(request.session);
 
-                        response.status(200).redirect("/");
-
-                        // response.status(200).json({
-                        //     message : "Registered Successfully"
-                        // });
+                        response.status(200).json({
+                            responseCode : 200
+                        });
                     })
                     .catch(err => console.log("Error: ", err));
             }
@@ -179,19 +161,20 @@ app.post("/login", (request, response) => {
                     console.log("Session: ");
                     console.log(request.session);
 
-                    response.status(200).redirect("/");
+                    // response.status(200).redirect("/");
 
-                    // response.status(200).json({
-                    //     message : "success"
-                    // })
-                } else {
                     response.status(200).json({
-                        message: "Password not matched !"
+                        responseCode : 200
+                    })
+                } else {
+                    response.status(503).json({
+                        responseCode : 503
                     })
                 }
             } else {
+                console.log("Email not registered !");
                 response.status(503).json({
-                    message: "Email not registered"
+                    responseCode : 503
                 })
             }
         })
@@ -319,98 +302,6 @@ app.post("/process", (request, response) => {
         console.log("Price: ", bidPrice);
         console.log("Quantity: ", bidQuantity);
 
-        // // Product Existence Check
-        // const productIndex = askData.findIndex((product)=> product.name === productName);
-
-        // console.log("Index of the Product: ",productIndex);
-
-        // If product doesn't exists, not found response !
-        // if(productIndex === -1){
-        //     response.status(404).json({
-        //         "message" : "Product Not Found !"
-        //     });
-        // }else{
-
-        //     console.log("Seller's Array: ");
-        //     console.log(askData);
-
-        //     console.log("Partial Array: ");
-        //     console.log(partialData);
-
-
-        //     // Bid against seller's product !
-        //     // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity)
-
-        //     // First Case : 2 orders, perfectly matched !
-        //     // Second Case : 2 orders, partial matched!
-        //     // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity,partialPrice,partialQuantity)
-
-        //     let partialPrice = 0;
-        //     let partialQuantity = 0;
-
-        //     // Delete partial order if exists !
-        //     if(partialData.length != 0){
-        //         partialPrice = partialData[0].price;
-        //         partialQuantity = partialData[0].quantity;
-
-        //         // Delete Partial Data array !
-        //         partialData.splice(0,1);
-        //     }
-
-        //     console.log("Partial Price: ",partialPrice);
-        //     console.log("Partial Quantity: ",partialQuantity);
-
-        //     let newValuesObj = createOrderBook_result(productName,Number(product.price),Number(askData[productIndex].quantity),Number(bidPrice),Number(bidQuantity),Number(partialPrice),Number(partialQuantity));
-
-        //     if(newValuesObj === -1){
-        //         response.status(503).json({
-        //             message : "Order is invalid...try later !"
-        //         })
-        //     }else{  //When order matches or partially matches !
-        //         console.log("New Value Object Generated: ");
-        //         console.log(newValuesObj);
-
-        //         // Update Ask price if needed !
-        //         if(askData[productIndex].price != newValuesObj.price){
-        //             askData[productIndex].price = newValuesObj.price; //Updated values of price !
-        //         }
-
-        //         // Update quantity 
-        //         console.log("Ask Quantity: ",askData[productIndex].quantity);
-        //         console.log("New Object Quantity: ",newValuesObj.quantity);
-        //         if(askData[productIndex].quantity != newValuesObj.quantity){
-
-        //             console.log("Ready for partial Data !");
-        //             //Update quantity, insert partially matched item in partialData array !
-        //             askData[productIndex].quantity = newValuesObj.quantity; //Updated values of quantity !
-
-        //             if(newValuesObj.order_status === "Order is Partially Completed"){
-        //                 // Partial Data !
-        //                 let partialItemObject = {
-        //                     sellerName : askData[productIndex].sellerName,
-        //                     name : newValuesObj.name,
-        //                     price : newValuesObj.partialPrice,
-        //                     quantity : newValuesObj.partialQuantity
-        //                 }
-
-        //                 partialData.push(partialItemObject);
-        //             }
-
-
-        //         }
-
-        //         console.log("Seller's Array: ");
-        //         console.log(askData);
-
-        //         console.log("Partial Array: ");
-        //         console.log(partialData);
-
-        //         response.send(newValuesObj.order_status);
-        //     }
-
-
-        // }
-
         Product.findOne({ productName: productName })
             .then((product) => {
                 console.log("Seller's Product: ");
@@ -419,153 +310,156 @@ app.post("/process", (request, response) => {
                 console.log("Partial Array: ");
                 console.log(partialData);
 
-
-                // Bid against seller's product !
-                // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity)
-
-                // First Case : 2 orders, perfectly matched !
-                // Second Case : 2 orders, partial matched!
-                // createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuantity,partialPrice,partialQuantity)
-
-                let partialPrice = 0;
-                let partialQuantity = 0;
-
-                // Delete partial order if exists !
-                if (partialData.length != 0) {
-                    partialPrice = partialData[0].price;
-                    partialQuantity = partialData[0].quantity;
-
-                    let body = `Congratulations, Your pending order is about to get completed !
-                                Order Details: 
-                                Order Name: ${productName}
-                                Order Price: ${partialData[0].price}
-                                Order Quantity: ${partialData[0].quantity}`
-
-                    // Send Mail to partial User!
-                    partialMail(partialData[0].email,body,(err)=>{
-                        if(err){
-                            response.status(503).json({
-                                message : `Mail Error`
-                            })
-                        }else{
-                            response.status(200).json({
-                                message : `Mail sent....Partial Order Completed !`
-                            })
-                        }
-                        });
-                    // Delete Partial Data array !
-                    partialData.splice(0, 1);
-                }
-
-                console.log("Partial Price: ", partialPrice);
-                console.log("Partial Quantity: ", partialQuantity);
-
-                let newValuesObj = createOrderBook_result(productName, Number(product.productPrice), Number(product.productQuantity), Number(bidPrice), Number(bidQuantity), Number(partialPrice), Number(partialQuantity));
-
-                let updatedPrice,updatedQuantity = product.productQuantity;
-                if (newValuesObj === -1) {
+                if(product.productQuantity === 0){
                     response.status(503).json({
-                        message: "Order is invalid...try later !"
+                        message : "Zero quantity error"
                     })
-                } else {  //When order matches or partially matches !
-                    console.log("New Value Object Generated: ");
-                    console.log(newValuesObj);
-
-                    // Update Ask price if needed !
-                    if (product.productPrice != newValuesObj.price) {
-                        updatedPrice = newValuesObj.price; //Updated values of price !
-                    }
-
-                    // Update quantity 
-                    // console.log("Ask Quantity: ", product.quantity);
-                    console.log("New Object Quantity: ", newValuesObj.quantity);
-                    if (product.productQuantity != newValuesObj.quantity) {
-
-                        console.log("Ready for partial Data !");
-                        //Update quantity, insert partially matched item in partialData array !
-                        updatedQuantity = newValuesObj.quantity; //Updated values of quantity !
-
-                        if (newValuesObj.order_status === "Order is Partially Completed") {
-                            // Partial Data !
-                            let partialItemObject = {
-                                sellerName: product.seller_name,
-                                email : request.session.email,
-                                name: newValuesObj.name,
-                                price: newValuesObj.partialPrice,
-                                quantity: newValuesObj.partialQuantity
+                }else{
+                    let partialPrice = 0;
+                    let partialQuantity = 0;
+    
+                    // Delete partial order if exists !
+                    if (partialData.length != 0) {
+                        partialPrice = partialData[0].price;
+                        partialQuantity = partialData[0].quantity;
+    
+                        let body = `Congratulations, Your pending order is about to get completed !
+                                    Order Details: 
+                                    Order Name: ${productName}
+                                    Order Price: ${partialData[0].price}
+                                    Order Quantity: ${partialData[0].quantity}`
+    
+                        // Send Mail to partial User!
+                        partialMail(partialData[0].email,body,(err)=>{
+                            if(err){
+                                response.status(503).json({
+                                    message : `Mail Error`
+                                })
+                            }else{
+                                response.status(200).json({
+                                    message : `Mail sent....Partial Order Completed !`
+                                })
                             }
-
-                            partialData.push(partialItemObject);
-                        }
-
-
+                            });
+                        // Delete Partial Data array !
+                        partialData.splice(0, 1);
                     }
-
-                    // Send a notification to seller and simultaneously update product database !
-                    Seller.updateOne(
-                        {
-                            email : product.email
-                        },
-                        { $set: { "products.$[elem].productPrice" : updatedPrice,"products.$[elem].productQuantity" : updatedQuantity } },
-                        { arrayFilters: [ { "elem.productName": { $gte: productName } } ] })
-                        .then(()=>{
-
-                            // Update Product Database !
-                            Product.updateOne(
-                                {
-                                    productName: productName 
-                                },
-                                {
-                                    $set : {productPrice: updatedPrice,productQuantity : updatedQuantity}
-                                },
-                                {
-                                    $new : true
+    
+                    console.log("Partial Price: ", partialPrice);
+                    console.log("Partial Quantity: ", partialQuantity);
+    
+                    let newValuesObj = createOrderBook_result(productName, Number(product.productPrice), Number(product.productQuantity), Number(bidPrice), Number(bidQuantity), Number(partialPrice), Number(partialQuantity));
+    
+                    let updatedPrice,updatedQuantity = product.productQuantity;
+                    if (newValuesObj === -1) {
+                        response.status(503).json({
+                            message: "Order is invalid...try later !"
+                        })
+                    } else {  //When order matches or partially matches !
+                        console.log("New Value Object Generated: ");
+                        console.log(newValuesObj);
+    
+                        // Update Ask price if needed !
+                        if (product.productPrice != newValuesObj.price) {
+                            updatedPrice = newValuesObj.price; //Updated values of price !
+                        }
+    
+                        // Update quantity 
+                        // console.log("Ask Quantity: ", product.quantity);
+                        console.log("New Object Quantity: ", newValuesObj.quantity);
+                        if (product.productQuantity != newValuesObj.quantity) {
+    
+                            console.log("Ready for partial Data !");
+                            //Update quantity, insert partially matched item in partialData array !
+                            updatedQuantity = newValuesObj.quantity; //Updated values of quantity !
+    
+                            if (newValuesObj.order_status === "Order is Partially Completed") {
+                                // Partial Data !
+                                let partialItemObject = {
+                                    sellerName: product.seller_name,
+                                    email : request.session.email,
+                                    name: newValuesObj.name,
+                                    price: newValuesObj.partialPrice,
+                                    quantity: newValuesObj.partialQuantity
                                 }
-                            )
+    
+                                partialData.push(partialItemObject);
+                            }
+    
+    
+                        }
+    
+                        // Send a notification to seller and simultaneously update product database !
+                        Seller.updateOne(
+                            {
+                                email : product.email
+                            },
+                            { $set: { "products.$[elem].productPrice" : updatedPrice,"products.$[elem].productQuantity" : updatedQuantity } },
+                            { arrayFilters: [ { "elem.productName": { $gte: productName } } ] })
                             .then(()=>{
-                                let subject = "";
-                                let body = "";
-                                if(newValuesObj.order_code === 200){
-                                    subject = "Online Marketplace: Order Completed";
-                                    body = `Hello ${request.session.user_name}, 
-                                            Your Order is Completed !
-        
-                                            Product Name: ${productName}
-                                            Product Price: ${bidPrice}
-                                            Product Quantity: ${bidQuantity}`;
-                                }else if(newValuesObj.order_code === 201) {
-                                    subject = "Online Marketplace: Order Partially Completed";
-                                    body = `Hello ${request.session.user_name}, 
-                                            Your Order is Partially Completed !
-        
-                                            Product Name: ${productName}
-                                            Product Price: ${bidPrice}
-                                            Product Quantity: ${bidQuantity}
-                                            
-                                            Wait till your order gets completed, your pending order is
-                                            Product Name: ${productName}
-                                            Product Price: ${newValuesObj.partialPrice}
-                                            Product Quantity: ${newValuesObj.partialQuantity}
-                                            `;
-                                }                        
-                                // Send order notification to buyer !
-                                buyerMail(request.session.email,subject,body,(err)=>{
-                                    if(err){
-                                        response.status(503).json({
-                                            message : `Mail Error`
-                                        })
-                                    }else{
-                                        response.status(200).json({
-                                            message : `Mail sent ! ${subject}`
-                                        })
+    
+                                // Update Product Database !
+                                Product.updateOne(
+                                    {
+                                        productName: productName 
+                                    },
+                                    {
+                                        $set : {productPrice: updatedPrice,productQuantity : updatedQuantity}
+                                    },
+                                    {
+                                        $new : true
                                     }
-                                });
-                                // response.send(newValuesObj.order_status);
+                                )
+                                .then(()=>{
+                                    let subject = "";
+                                    let body = "";
+                                    if(newValuesObj.order_code === 200){
+
+                                        subject = "Online Marketplace: Order Completed";
+                                        body = `Hello ${request.session.user_name}, 
+                                                Your Order is Completed !
+
+                                                Product Name: ${productName}
+                                                Product Price: ${bidPrice}
+                                                Product Quantity: ${bidQuantity}`;
+
+                                    }else if(newValuesObj.order_code === 201) {
+
+                                        subject = "Online Marketplace: Order Partially Completed";
+                                        body = `Hello ${request.session.user_name}, 
+                                                Your Order is Partially Completed !
+            
+                                                Product Name: ${productName}
+                                                Product Price: ${bidPrice}
+                                                Product Quantity: ${bidQuantity}
+                                                
+                                                Wait till your order gets completed, your pending order is
+                                                Product Name: ${productName}
+                                                Product Price: ${newValuesObj.partialPrice}
+                                                Product Quantity: ${newValuesObj.partialQuantity}
+                                                `;
+                                                
+                                    }                        
+                                    // Send order notification to buyer !
+                                    buyerMail(request.session.email,subject,body,(err)=>{
+                                        if(err){
+                                            response.status(503).json({
+                                                message : `Mail Error`
+                                            })
+                                        }else{
+                                            response.status(200).json({
+                                                message : `Mail sent ! ${subject}`
+                                            })
+                                        }
+                                    });
+                                })
+                                .catch(err=>console.log("Error: ",err));
                             })
                             .catch(err=>console.log("Error: ",err));
-                        })
-                        .catch(err=>console.log("Error: ",err));
+                    }
                 }
+
+
                 })
             .catch(err => console.log("Error: ", err));
 

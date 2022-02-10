@@ -1,28 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300&family=Poppins:wght@300&family=Josefin+Sans&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
     <title>Register</title>
 </head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html,
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        background-color: #ffffff;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 1500'%3E%3Cdefs%3E%3Crect stroke='%23ffffff' stroke-width='.5' width='1' height='1' id='s'/%3E%3Cpattern id='a' width='3' height='3' patternUnits='userSpaceOnUse' patternTransform='scale(50) translate(-980 -735)'%3E%3Cuse fill='%23fafafa' href='%23s' y='2'/%3E%3Cuse fill='%23fafafa' href='%23s' x='1' y='2'/%3E%3Cuse fill='%23f5f5f5' href='%23s' x='2' y='2'/%3E%3Cuse fill='%23f5f5f5' href='%23s'/%3E%3Cuse fill='%23f0f0f0' href='%23s' x='2'/%3E%3Cuse fill='%23f0f0f0' href='%23s' x='1' y='1'/%3E%3C/pattern%3E%3Cpattern id='b' width='7' height='11' patternUnits='userSpaceOnUse' patternTransform='scale(50) translate(-980 -735)'%3E%3Cg fill='%23ebebeb'%3E%3Cuse href='%23s'/%3E%3Cuse href='%23s' y='5' /%3E%3Cuse href='%23s' x='1' y='10'/%3E%3Cuse href='%23s' x='2' y='1'/%3E%3Cuse href='%23s' x='2' y='4'/%3E%3Cuse href='%23s' x='3' y='8'/%3E%3Cuse href='%23s' x='4' y='3'/%3E%3Cuse href='%23s' x='4' y='7'/%3E%3Cuse href='%23s' x='5' y='2'/%3E%3Cuse href='%23s' x='5' y='6'/%3E%3Cuse href='%23s' x='6' y='9'/%3E%3C/g%3E%3C/pattern%3E%3Cpattern id='h' width='5' height='13' patternUnits='userSpaceOnUse' patternTransform='scale(50) translate(-980 -735)'%3E%3Cg fill='%23ebebeb'%3E%3Cuse href='%23s' y='5'/%3E%3Cuse href='%23s' y='8'/%3E%3Cuse href='%23s' x='1' y='1'/%3E%3Cuse href='%23s' x='1' y='9'/%3E%3Cuse href='%23s' x='1' y='12'/%3E%3Cuse href='%23s' x='2'/%3E%3Cuse href='%23s' x='2' y='4'/%3E%3Cuse href='%23s' x='3' y='2'/%3E%3Cuse href='%23s' x='3' y='6'/%3E%3Cuse href='%23s' x='3' y='11'/%3E%3Cuse href='%23s' x='4' y='3'/%3E%3Cuse href='%23s' x='4' y='7'/%3E%3Cuse href='%23s' x='4' y='10'/%3E%3C/g%3E%3C/pattern%3E%3Cpattern id='c' width='17' height='13' patternUnits='userSpaceOnUse' patternTransform='scale(50) translate(-980 -735)'%3E%3Cg fill='%23e5e5e5'%3E%3Cuse href='%23s' y='11'/%3E%3Cuse href='%23s' x='2' y='9'/%3E%3Cuse href='%23s' x='5' y='12'/%3E%3Cuse href='%23s' x='9' y='4'/%3E%3Cuse href='%23s' x='12' y='1'/%3E%3Cuse href='%23s' x='16' y='6'/%3E%3C/g%3E%3C/pattern%3E%3Cpattern id='d' width='19' height='17' patternUnits='userSpaceOnUse' patternTransform='scale(50) translate(-980 -735)'%3E%3Cg fill='%23ffffff'%3E%3Cuse href='%23s' y='9'/%3E%3Cuse href='%23s' x='16' y='5'/%3E%3Cuse href='%23s' x='14' y='2'/%3E%3Cuse href='%23s' x='11' y='11'/%3E%3Cuse href='%23s' x='6' y='14'/%3E%3C/g%3E%3Cg fill='%23e0e0e0'%3E%3Cuse href='%23s' x='3' y='13'/%3E%3Cuse href='%23s' x='9' y='7'/%3E%3Cuse href='%23s' x='13' y='10'/%3E%3Cuse href='%23s' x='15' y='4'/%3E%3Cuse href='%23s' x='18' y='1'/%3E%3C/g%3E%3C/pattern%3E%3Cpattern id='e' width='47' height='53' patternUnits='userSpaceOnUse' patternTransform='scale(50) translate(-980 -735)'%3E%3Cg fill='%23F60'%3E%3Cuse href='%23s' x='2' y='5'/%3E%3Cuse href='%23s' x='16' y='38'/%3E%3Cuse href='%23s' x='46' y='42'/%3E%3Cuse href='%23s' x='29' y='20'/%3E%3C/g%3E%3C/pattern%3E%3Cpattern id='f' width='59' height='71' patternUnits='userSpaceOnUse' patternTransform='scale(50) translate(-980 -735)'%3E%3Cg fill='%23F60'%3E%3Cuse href='%23s' x='33' y='13'/%3E%3Cuse href='%23s' x='27' y='54'/%3E%3Cuse href='%23s' x='55' y='55'/%3E%3C/g%3E%3C/pattern%3E%3Cpattern id='g' width='139' height='97' patternUnits='userSpaceOnUse' patternTransform='scale(50) translate(-980 -735)'%3E%3Cg fill='%23F60'%3E%3Cuse href='%23s' x='11' y='8'/%3E%3Cuse href='%23s' x='51' y='13'/%3E%3Cuse href='%23s' x='17' y='73'/%3E%3Cuse href='%23s' x='99' y='57'/%3E%3C/g%3E%3C/pattern%3E%3C/defs%3E%3Crect fill='url(%23a)' width='100%25' height='100%25'/%3E%3Crect fill='url(%23b)' width='100%25' height='100%25'/%3E%3Crect fill='url(%23h)' width='100%25' height='100%25'/%3E%3Crect fill='url(%23c)' width='100%25' height='100%25'/%3E%3Crect fill='url(%23d)' width='100%25' height='100%25'/%3E%3Crect fill='url(%23e)' width='100%25' height='100%25'/%3E%3Crect fill='url(%23f)' width='100%25' height='100%25'/%3E%3Crect fill='url(%23g)' width='100%25' height='100%25'/%3E%3C/svg%3E");
+        background-attachment: fixed;
+        background-size: cover;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        /* #EF4319 #F86C20 #232D36 */
+        background: #232D36;
+        background: #ffffff;
+        padding: 3em;
+        position: relative;
+        top: 0;
+        left: 0;
+        margin-top: 10%;
+    }
+
+    img {
+        display: block;
+        height: 60px;
+        max-width: 50%;
+    }
+
+    /* lOGO */
+    .container .logo {
+        position: absolute;
+        top: 2%;
+        left: 3%;
+    }
+
+    .logo img {
+        height: 50px;
+        max-width: 100%;
+    }
+
+    /* Title */
+    .container .title {
+        margin-top: 25%;
+        margin-bottom: 20%;
+        font-family: 'Inconsolata', monospace;
+        color: #f5f5f5;
+        color: #232D36;
+    }
+
+    .title p {
+        text-align: center;
+        margin-top: 7%;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        font-size: .6rem;
+        font-weight: bolder;
+    }
+
+    /* Form */
+    .form .name,
+    .form .topic,
+    .form .number,
+    .form .btn,
+    .form .description {
+        position: relative;
+        top: 0;
+        left: 0;
+        display: flex;
+        justify-content: center;
+    }
+
+    .form h2 {
+        text-align: left;
+        margin-bottom: 20%;
+        border-right: none;
+        border-bottom: none;
+        border-left: 3px solid #232D36;
+        padding: 0.2px 10px;
+        color: #232D36;
+        font-family: 'Inconsolata', monospace;
+        font-size: 1.4rem;
+    }
+
+    .form>div {
+        margin: 10%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    input,
+    select {
+        padding: 1em 1.3em 1em 2.4em;
+        border: none;
+        background: rgb(245, 245, 245);
+        outline: none;
+        color: #232D36;
+        font-family: 'Josefin Sans', monospace;
+    }
+
+    select {
+        padding: 1em .5em 1em 1em;
+    }
+
+    .name {
+        position: relative;
+        top: 0;
+        left: 0;
+    }
+
+    .name i,
+    .topic i,
+    .number i {
+        position: absolute;
+        top: 28%;
+        left: -8%;
+        color: #3b3b3b;
+        font-size: .8rem;
+    }
+
+    .btn button {
+        margin-top: 10%;
+        background: #535353;
+        color: #f7f7f7;
+        padding: 1em 1.5em 1em 1.5em;
+        border-radius: 5px;
+        border: none;
+        font-family: 'Josefin Sans',
+            sans-serif;
+        text-transform: uppercase;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .loading-1 {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        height: 100%;
+        width: 100%;
+        background: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: inherit;
+        opacity: 0;
+    }
+
+    .loading-1::before {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        border: 3px dashed #ffffff;
+        width: 30px;
+        height: 30px;
+        border-left: 3px solid transparent;
+        border-right: 3px solid transparent;
+        animation: loading1 linear infinite;
+        z-index: 5;
+    }
+
+    .loading-1::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        border: 3px solid #ffffff;
+        width: 30px;
+        height: 30px;
+        border-left: 3px solid transparent;
+        border-right: 3px solid transparent;
+        animation: loading1 1s ease infinite;
+        z-index: 10;
+    }
+
+    /* Notification */
+    .notify {
+        position: fixed;
+        top: -10%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 20;
+        background: rgb(245, 245, 245);
+        padding: 1em 2em 1em 2em;
+        border-radius: 10px;
+        font-family: 'Inconsolata', monospace;
+        /* opacity: 0;
+        pointer-events: none; */
+    }
+
+    .notify.active {
+        top : 10%;
+    }
+
+    @keyframes loading1 {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @media (max-width: 578.6px) {
+        .form {
+            padding: 1em;
+        }
+
+        .notify {
+            font-size: .7rem;
+            padding-right: 1em;
+            left: 35%;
+            transform: translateX(-29%);
+        }
+
+        .back-arrow span {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
 <body>
-    <h2>Register</h2>
-    <form action="/register" method="POST">
-        <input type="text" name="name" placeholder="Name" autocomplete="off">
-        <input type="email" name="email" placeholder="Email" autocomplete="off">
-        <input type="password" id="password" name="password" placeholder="Password" autocomplete="off">
-        <button>Sign Up</button>
-    </form>
-    
-    <button class="showPassword">Show password 👁</button>
+    <div class="notify">
+        <h2>Already Registered ! 🤷‍♂️</h2>
+    </div>
+    <div class="container">
+
+        <!-- Form -->
+        <div class="form">
+            <h2>Register <i class="fa fa-user-plus" aria-hidden="true"></i></h2>
+            <div class="name">
+                <input type="text" name="name" id="name" placeholder="Name" autocomplete="off">
+                <i class="fa fa-user" aria-hidden="true"></i>
+            </div>
+
+            <div class="topic">
+                <input type="email" name="topic" id="email" placeholder="Email ID" required>
+                <i class="fa fa-envelope" aria-hidden="true"></i>
+            </div>
+            <div class="number">
+                <input type="password" name="password" id="password" placeholder="Create Password" autocomplete="off">
+                <i class="fa fa-lock" aria-hidden="true"></i>
+            </div>
+            <div class="btn">
+                <button type="submit" id="loader">Proceed ▶
+                    <div class="loading-1 loading"></div>
+                </button>
+            </div>
+
+            <div class="btn">
+                <a href="/login"><button>Login
+                    <div class="loading-1 loading"></div>
+                </button></a>
+            </div>
+
+        </div>
+    </div>
 </body>
 <script>
-    const showPassword = document.querySelector(".showPassword");
+
+    const email = document.querySelector("#email");
+    const name = document.querySelector("#name");
     const password = document.querySelector("#password");
 
-    showPassword.addEventListener("click",()=>{
-        password.setAttribute("type","text");
-    })
+    const button = document.getElementById("loader");
+    const loading = document.querySelector(".loading-1");
+    const icon = document.querySelector(".fa-paper-plane");
+
+    button.addEventListener("click", () => {
+       const options = {
+           method : "POST",
+           body : JSON.stringify({
+               name : name.value,
+               email : email.value,
+               password : password.value
+           }),
+           headers : new Headers({
+               'Content-Type' : 'application/json'
+           })
+       }
+
+       fetch('/register',options)
+        .then(res=>res.json())
+        .then((result)=>{
+            if(result.responseCode === 200){
+                document.querySelector(".notify").innerHTML = "<h2>Success ! ✔</h2>";
+                document.querySelector(".notify").classList.add("active");
+
+                location.href = "http://127.0.0.1:5500/";
+            }else{
+                document.querySelector(".notify").innerHTML = "<h2>Failed</h2>";
+                document.querySelector(".notify").classList.add("active");
+            }
+
+            setTimeout(()=>{
+                document.querySelector(".notify").classList.remove("active");
+            },3000);
+        })
+        .catch(); 
+    });
+
 </script>
+
 </html>
