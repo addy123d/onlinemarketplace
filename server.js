@@ -81,7 +81,13 @@ app.get("/", (request, response) => {
 
     if (request.session.email != undefined) sessionStatus = true;
 
-    response.render("index", { sessionStatus });
+    Product.find()
+        .then((products)=>{
+            response.render("index", { sessionStatus,products });
+        })
+        .catch(err=>console.log("Error: ",err));
+
+  
 })
 
 app.get("/register", authenticated, (request, response) => {
@@ -181,6 +187,13 @@ app.post("/login", (request, response) => {
         .catch(err => console.log("Error: ", err));
 
 
+})
+
+
+app.get("/bidForm",unauthenticated,(request,response)=>{
+    const productId = request.query.productID;
+
+    response.render("bidform",{productId});
 })
 
 app.post("/askData", (request, response) => {
@@ -294,15 +307,15 @@ app.post("/process", (request, response) => {
 
         // Declare variables for each product parameter !
 
-        let productName = request.body.name.toLowerCase();
+        let productID = request.body.id;
         let bidPrice = request.body.price;
         let bidQuantity = request.body.quantity;
 
-        console.log("Product Name:", productName);
+        console.log("Product ID:", productID);
         console.log("Price: ", bidPrice);
         console.log("Quantity: ", bidQuantity);
 
-        Product.findOne({ productName: productName })
+        Product.findOne({ _id: productID })
             .then((product) => {
                 console.log("Seller's Product: ");
                 console.log(product);
@@ -312,7 +325,9 @@ app.post("/process", (request, response) => {
 
                 if(product.productQuantity === 0){
                     response.status(503).json({
-                        message : "Zero quantity error"
+                        message : "Zero quantity error",
+                        order : "invalid",
+                        responseCode : 503
                     })
                 }else{
                     let partialPrice = 0;
@@ -333,11 +348,14 @@ app.post("/process", (request, response) => {
                         partialMail(partialData[0].email,body,(err)=>{
                             if(err){
                                 response.status(503).json({
-                                    message : `Mail Error`
+                                    message : `Mail Error`,
+                                    responseCode : 503
                                 })
                             }else{
                                 response.status(200).json({
-                                    message : `Mail sent....Partial Order Completed !`
+                                    message : `Mail sent....Partial Order Completed !`,
+                                    order : "complete",
+                                    responseCode : 200
                                 })
                             }
                             });
@@ -348,12 +366,14 @@ app.post("/process", (request, response) => {
                     console.log("Partial Price: ", partialPrice);
                     console.log("Partial Quantity: ", partialQuantity);
     
-                    let newValuesObj = createOrderBook_result(productName, Number(product.productPrice), Number(product.productQuantity), Number(bidPrice), Number(bidQuantity), Number(partialPrice), Number(partialQuantity));
+                    let newValuesObj = createOrderBook_result(product.productName, Number(product.productPrice), Number(product.productQuantity), Number(bidPrice), Number(bidQuantity), Number(partialPrice), Number(partialQuantity));
     
                     let updatedPrice,updatedQuantity = product.productQuantity;
                     if (newValuesObj === -1) {
                         response.status(503).json({
-                            message: "Order is invalid...try later !"
+                            message: "Order is invalid...try later !",
+                            order : "invalid",
+                            responseCode : 503
                         })
                     } else {  //When order matches or partially matches !
                         console.log("New Value Object Generated: ");
@@ -395,13 +415,13 @@ app.post("/process", (request, response) => {
                                 email : product.email
                             },
                             { $set: { "products.$[elem].productPrice" : updatedPrice,"products.$[elem].productQuantity" : updatedQuantity } },
-                            { arrayFilters: [ { "elem.productName": { $gte: productName } } ] })
+                            { arrayFilters: [ { "elem.productName": { $gte: product.productName } } ] })
                             .then(()=>{
     
                                 // Update Product Database !
                                 Product.updateOne(
                                     {
-                                        productName: productName 
+                                        productName: product.productName 
                                     },
                                     {
                                         $set : {productPrice: updatedPrice,productQuantity : updatedQuantity}
@@ -413,23 +433,26 @@ app.post("/process", (request, response) => {
                                 .then(()=>{
                                     let subject = "";
                                     let body = "";
+                                    let order = "";
                                     if(newValuesObj.order_code === 200){
 
                                         subject = "Online Marketplace: Order Completed";
+                                        order = "complete";
                                         body = `Hello ${request.session.user_name}, 
                                                 Your Order is Completed !
 
-                                                Product Name: ${productName}
+                                                Product Name: ${product.productName}
                                                 Product Price: ${bidPrice}
                                                 Product Quantity: ${bidQuantity}`;
 
                                     }else if(newValuesObj.order_code === 201) {
 
                                         subject = "Online Marketplace: Order Partially Completed";
+                                        order = "partial";
                                         body = `Hello ${request.session.user_name}, 
                                                 Your Order is Partially Completed !
             
-                                                Product Name: ${productName}
+                                                Product Name: ${product.productName}
                                                 Product Price: ${bidPrice}
                                                 Product Quantity: ${bidQuantity}
                                                 
@@ -448,7 +471,8 @@ app.post("/process", (request, response) => {
                                             })
                                         }else{
                                             response.status(200).json({
-                                                message : `Mail sent ! ${subject}`
+                                                message : `Mail sent ! ${subject}`,
+                                                order : order
                                             })
                                         }
                                     });
@@ -472,7 +496,15 @@ app.post("/process", (request, response) => {
 })
 
 app.get("/sellerdashboard", unauthenticated, (request, response) => {
-    response.render("sellerdashboard");
+
+    Seller.findOne({seller_name : request.session.user_name})
+        .then((seller)=>{
+            response.render("sellerdashboard",{
+                products : seller.products
+            });
+        })
+        .catch(err=>console.log("Error: ",err));
+
 });
 
 app.get("/logout", unauthenticated, (request, response) => {
