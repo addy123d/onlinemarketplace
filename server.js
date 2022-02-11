@@ -347,17 +347,19 @@ app.post("/process", (request, response) => {
                         // Send Mail to partial User!
                         partialMail(partialData[0].email,body,(err)=>{
                             if(err){
-                                response.status(503).json({
-                                    message : `Mail Error`,
-                                    order : "partial"
-                                    responseCode : 503
-                                })
+                                console.log("Mail error");
+//                                 response.status(503).json({
+//                                     message : `Mail Error`,
+//                                     order : "complete"
+//                                     responseCode : 503
+//                                 })
                             }else{
-                                response.status(200).json({
-                                    message : `Mail sent....Partial Order Completed !`,
-                                    order : "complete",
-                                    responseCode : 200
-                                })
+                                console.log("Your Partial order is about to get completed !");
+//                                 response.status(200).json({
+//                                     message : `Mail sent....Partial Order Completed !`,
+//                                     order : "complete",
+//                                     responseCode : 200
+//                                 })
                             }
                             });
                         // Delete Partial Data array !
