@@ -499,9 +499,16 @@ app.get("/sellerdashboard", unauthenticated, (request, response) => {
 
     Seller.findOne({seller_name : request.session.user_name})
         .then((seller)=>{
-            response.render("sellerdashboard",{
-                products : seller.products
-            });
+            if(seller != null){
+                response.render("sellerdashboard",{
+                    products : seller.products
+                });
+            }else{
+                response.render("sellerdashboard",{
+                    products : ""
+                });
+            }
+
         })
         .catch(err=>console.log("Error: ",err));
 
