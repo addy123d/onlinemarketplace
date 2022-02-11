@@ -467,7 +467,8 @@ app.post("/process", (request, response) => {
                                     buyerMail(request.session.email,subject,body,(err)=>{
                                         if(err){
                                             response.status(503).json({
-                                                message : `Mail Error`
+                                                message : `Mail Error`,
+                                                order: order
                                             })
                                         }else{
                                             response.status(200).json({
