@@ -349,6 +349,7 @@ app.post("/process", (request, response) => {
                             if(err){
                                 response.status(503).json({
                                     message : `Mail Error`,
+                                    order : "partial"
                                     responseCode : 503
                                 })
                             }else{
