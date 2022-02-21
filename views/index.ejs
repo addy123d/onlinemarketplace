@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <title>Dashboard</title>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .products {
+        background: #fff;
+        background-size: cover;
+        min-height: 100vh;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-gap: 20px;
+        align-items: stretch;
+        background: #fff;
+        margin: 4%;
+    }
+
+    .grid>article {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        border: 1px solid #ccc;
+        box-shadow: 2px 2px 6px 0px rgba(0, 0, 0, 0.3);
+        padding: 2em;
+    }
+
+    .grid>article img {
+        max-width: 100%;
+    }
+
+    button {
+        display: inline-block;
+        border-radius: 4px;
+        background-color: #3d405b;
+        border: none;
+        color: #FFFFFF;
+        text-align: center;
+        font-size: 17px;
+        padding: 16px;
+        width: 130px;
+        transition: all 0.5s;
+        cursor: pointer;
+        margin: 5px;
+    }
+
+    button span {
+        cursor: pointer;
+        display: inline-block;
+        position: relative;
+        transition: 0.5s;
+    }
+
+    button span:after {
+        content: '»';
+        position: absolute;
+        opacity: 0;
+        top: 0;
+        right: -15px;
+        transition: 0.5s;
+    }
+
+    button:hover span {
+        padding-right: 15px;
+    }
+
+    button:hover span:after {
+        opacity: 1;
+        right: 0;
+    }
+
+    .content>div {
+        margin-top: 4%;
+        margin-bottom: 4%;
+    }
+
+
+    .content .name p {
+        text-transform: capitalize;
+    }
+
+    .buttons {
+        display: flex;
+        justify-content: center;
+
+        margin: 5%;
+    }
+
+    @media (max-width: 730px) {
+        .grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 530px) {
+        .grid {
+            grid-template-columns: 100%;
+        }
+    }
+</style>
+
+<body>
+    <section class="products">
+
+        <div class="buttons">
+            <%if(sessionStatus){%>
+                <div class="btn2">
+                    <a href="/logout"><button>Logout</button></a>
+                </div>
+                <%}else{%>
+                    <div class="btn1">
+                        <a href="/login"><button>Sign In</button></a>
+                    </div>
+                    <%}%>
+        </div>
+
+        <div class="grid">
+
+            <%for(let i=0; i < products.length; i++){%>
+                <article>
+                    <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp"
+                        alt="">
+                    <div class="content">
+                        <div class="name">
+                            <p>Name: <%=products[i].name%>
+                            </p>
+                        </div>
+                        <div class="price">
+                            <p>Price: <%=products[i].base_price%>
+                            </p>
+                        </div>
+                    </div>
+                    <a href="#"><button><span>Sell</span></button></a>
+                    <a href="#"><button><span>Bid</span></button></a>
+                </article>
+                <%}%>
+                    <!-- <article>
+                    <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp" alt="">
+                    <div class="content">
+                        <div class="name"><p>Name: Onion</p></div>
+                        <div class="price"><p>Price: 100</p></div>
+                        <div class="quantity"><p>Quantity: 20</p></div>
+                    </div>
+                    <button>  <span> Bid
+                    </span></button>
+            </article>
+            <article>
+                <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp" alt="">
+                <div class="content">
+                    <div class="name"><p>Name: Onion</p></div>
+                    <div class="price"><p>Price: 100</p></div>
+                    <div class="quantity"><p>Quantity: 20</p></div>
+                </div>
+                <button>  <span> Bid
+  </span></button>
+            </article>
+            <article>
+                <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp" alt="">
+                <div class="content">
+                    <div class="name"><p>Name: Onion</p></div>
+                    <div class="price"><p>Price: 100</p></div>
+                    <div class="quantity"><p>Quantity: 20</p></div>
+                </div>
+                <button>  <span> Bid
+  </span></button>
+            </article>
+            <article>
+                <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp" alt="">
+                <div class="content">
+                    <div class="name"><p>Name: Onion</p></div>
+                    <div class="price"><p>Price: 100</p></div>
+                    <div class="quantity"><p>Quantity: 20</p></div>
+                </div>
+                <button>  <span> Bid
+  </span></button>
+            </article> -->
+        </div>
+
+    </section>
+</body>
+
+</html>

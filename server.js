@@ -1,0 +1,231 @@
+const express = require("express");
+const mongo = require("mongoose");
+const session = require("express-session");
+const ejs = require("ejs");
+const dbURL = require("./setup/config").url;
+const host = '127.0.0.1';
+const port = process.env.PORT || 3000;
+
+let app = express();
+app.set("view engine", "ejs");
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.set('trust proxy', 1) // trust first proxy
+app.use(session({
+    name: "user",
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false, httpOnly: true, path: "/" }
+}))
+
+// Protected Functions !
+
+function unauthenticated(request, response, next) {
+    console.log(request.session);
+
+    if (request.session.email != undefined || request.session.adminAccess) {
+        next();
+    } else {
+        response.redirect("/login");
+    }
+}
+
+function authenticated(request, response, next) {
+    if (request.session.email) {
+        response.redirect("/");
+    }else if(request.session.adminAccess){
+        response.redirect("/admin");
+    }
+     else {
+        next();
+    }
+}
+
+// Import Tables 
+const Base = require("./tables/Admin");
+const User = require("./tables/User");
+const Admin = require("./tables/Admin");
+
+
+
+// Database Connection !
+mongo.connect(dbURL)
+    .then(() => {
+        console.log("Database Connected !");
+    })
+    .catch(err => console.log("Error: ".err));
+
+
+// Routes
+app.get("/",(request,response)=>{
+    let sessionStatus = false;
+
+    if (request.session.email != undefined || request.session.adminAccess) sessionStatus = true;
+
+    Admin.find()
+        .then((assets)=>{
+            response.render("index", { sessionStatus : sessionStatus,products : assets });
+        })
+        .catch(err=>console.log("Error: ",err));
+})
+
+app.get("/register", authenticated, (request, response) => {
+    console.log(request.session);
+    response.render("register");
+});
+
+
+app.get("/login", authenticated, (request, response) => {
+    response.render("login");
+});
+
+app.post("/register", (request, response) => {
+    console.log(request.body);
+
+    const { name, email, password } = request.body;
+
+    // Query Database
+
+    User.findOne({ email: email })
+        .then((person) => {
+            if (person) {
+                // If email already exists !, our email matches with any mail in the document 
+                response.status(503).json({
+                    "message": "Email ID already registered",
+                    responseCode: 503
+                })
+            } else {
+                // This is our first time user, so save his/her data !
+                // @TODO - ADD TIMESTAMP
+                let userObj = {
+                    name: name,
+                    email: email,
+                    password: password,
+                    portfolio : []
+                }
+
+                new User(userObj).save()
+                    .then((user) => {
+                        console.log("User registered successfully !");
+
+                        request.session.user_name = user.name;
+                        request.session.email = user.email;
+                        request.session.password = user.password;
+
+                        console.log("Session: ");
+                        console.log(request.session);
+
+                        response.status(200).json({
+                            responseCode: 200,
+                            access : "user"
+                        });
+                    })
+                    .catch(err => console.log("Error: ", err));
+            }
+        })
+        .catch(err => console.log("Error: ", err));
+
+
+})
+
+app.post("/login", (request, response) => {
+    console.log(request.body);
+
+    const { email, password } = request.body;
+
+    if (email === "admin@onlinemarket" || password === "000") {
+        request.session.adminAccess = true;
+        response.json({
+            responseCode : 200,
+            access : "admin"
+        })
+    } else {
+        // Query Database
+
+        User.findOne({ email: email })
+            .then((person) => {
+                if (person) {
+                    // Match password 
+                    if (password === person.password) {
+
+                        request.session.user_name = person.name;
+                        request.session.email = person.email;
+                        request.session.password = person.password;
+
+                        console.log("Session: ");
+                        console.log(request.session);
+
+                        // response.status(200).redirect("/");
+
+                        response.status(200).json({
+                            responseCode: 200,
+                            access : "user"
+                        })
+                    } else {
+                        response.status(503).json({
+                            responseCode: 503
+                        })
+                    }
+                } else {
+                    console.log("Email not registered !");
+                    response.status(503).json({
+                        responseCode: 503
+                    })
+                }
+            })
+            .catch(err => console.log("Error: ", err));
+    }
+
+
+
+
+})
+
+app.get("/admin", unauthenticated, (request, response) => {
+
+    Base.find()
+        .then((data) => {
+            response.render("admin", { baseData: data });
+        })
+        .catch(err => console.log("Error: ", err));
+
+});
+
+app.post("/basedata", (request, response) => {
+    console.log(request.body);
+
+    const { ProductName, ProductPrice, ProductAvailability } = request.body;
+    let id = Date.now();
+
+    let baseObj = {
+        id: id,
+        name: ProductName,
+        base_price: ProductPrice,
+        availability: ProductAvailability
+    };
+
+    new Base(baseObj).save()
+        .then(() => {
+            console.log("Added successfully !");
+
+            response.json({
+                message: "Added"
+            })
+        })
+        .catch(err => console.log("Error: ", err));
+})
+
+
+app.get("/logout", unauthenticated, (request, response) => {
+    request.session.destroy(function (err) {
+        // cannot access session here
+        response.redirect("/login")
+    });
+})
+
+
+app.listen(port, host, () => {
+    console.log(`Server is running..`);
+})
