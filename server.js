@@ -47,7 +47,8 @@ function authenticated(request, response, next) {
 const Base = require("./tables/Admin");
 const User = require("./tables/User");
 const Admin = require("./tables/Admin");
-
+const Order = require("./tables/Orderbook");
+const Orderbook = require("./tables/Orderbook");
 
 
 // Database Connection !
@@ -87,7 +88,6 @@ app.post("/register", (request, response) => {
     const { name, email, password } = request.body;
 
     // Query Database
-
     User.findOne({ email: email })
         .then((person) => {
             if (person) {
@@ -128,7 +128,7 @@ app.post("/register", (request, response) => {
         .catch(err => console.log("Error: ", err));
 
 
-})
+});
 
 app.post("/login", (request, response) => {
     console.log(request.body);
@@ -177,10 +177,6 @@ app.post("/login", (request, response) => {
             })
             .catch(err => console.log("Error: ", err));
     }
-
-
-
-
 })
 
 app.get("/admin", unauthenticated, (request, response) => {
@@ -192,6 +188,83 @@ app.get("/admin", unauthenticated, (request, response) => {
         .catch(err => console.log("Error: ", err));
 
 });
+
+// /order?type=buy&name=xyz&price=000&quantity
+app.get("/order",unauthenticated,(request,response)=>{
+    const { type, name, price} = request.query;
+    console.log(request.query);
+
+    response.render("bidform",{type,name,price});
+});
+
+app.post("/place",unauthenticated,(request,response)=>{
+    console.log(request.body);
+
+    let orderObj = {};
+    orderObj.type = request.body.type;
+    orderObj.name = request.body.name;
+
+    // Differentiate between orders !
+    if(request.body.type === "sell"){
+        orderObj.quantity = request.body.quantity;
+    }else{
+        orderObj.price = request.body.price;
+    }
+
+
+    // Place an order !
+    Orderbook.findOne({name : request.body.name})
+        .then((asset)=>{
+            if(asset){
+               if(request.body.type === "sell"){
+                // Sell Order Update Query
+                Orderbook.updateOne({
+                    name : request.body.name
+                },{
+                    $push : {sellOrders : {orderObj}}
+                },{
+                    $new  : true
+                })
+                .then(()=>{
+                    console.log("Order Placed !");
+                    response.json({
+                        message : "placed"
+                    })
+                })
+                .catch("Error: ",err);
+               }else{   
+                // Buy Order Update Query
+                Orderbook.updateOne({
+                    name : request.body.name
+                },{
+                    $push : {buyOrders : {orderObj}}
+                },{
+                    $new : true
+                })
+                .then(()=>{
+                    console.log("Order Placed !");
+                    response.json({
+                        message : "placed"
+                    })
+                })
+                .catch(err=>console.log("Error: ",err));
+               }
+            }else{
+               console.log(orderObj);
+                new Order(orderObj).save()
+                    .then(()=>{
+                        console.log("Order placed successfully !");
+                        // Add response !
+                        response.json({
+                            message : "placed"
+                        })
+                    })
+                    .catch(err=>console.log("Error: ",err));
+            }
+        })
+        .catch(err=>console.log("Error: ",err));
+})
+
 
 app.post("/basedata", (request, response) => {
     console.log(request.body);
