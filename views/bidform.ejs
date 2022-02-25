@@ -263,7 +263,7 @@
 
         <!-- Form -->
         <div class="form">
-            <h2>Start Bidding</h2>
+            <h2>Start Trading</h2>
 
             <div class="topic">
                 <input type="text" name="id" id="name" value="<%=name%>" readonly>
@@ -273,7 +273,6 @@
             <%if(type==="sell"){%>
                 <div class="topic">
                     <input type="text" name="quantity" id="quantity" placeholder="Enter Quantity">
-                    <i class="fa fa-rupee" aria-hidden="true"></i>
                 </div>
                 <div class="btn">
                     <button type="submit" id="sellbtn">Sell</button>
@@ -333,6 +332,14 @@
             .then((result)=>{
                 console.log(result);
                 alert(result.message);
+
+
+                // Clear out the inputs !
+                if(ordertype === "sell"){
+                    quantity.value = "";
+                }else{
+                    price.value = "";
+                }
             })
             .catch(err=>console.error("Error: ",err));
     }

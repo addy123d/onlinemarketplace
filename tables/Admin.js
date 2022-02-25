@@ -10,6 +10,10 @@ const baseSchema = new schema({
         type : Number,
         required : true
     },
+    base_quantity :{
+        type : String,
+        required: true
+    },
     availability : {
         type : Boolean,
         required : true

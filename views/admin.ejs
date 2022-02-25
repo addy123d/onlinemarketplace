@@ -240,6 +240,9 @@
                 <input type="text" name="price" class="productPrice" placeholder="Price" required>
                 <i class="fa fa-rupee" aria-hidden="true"></i>
             </div>
+            <div class="topic">
+                <input type="text" name="quantity" class="productQuantity" placeholder="Quantity" required>
+            </div>
             <div class="number">
                 <input type="checkbox" name="availability" class="productAvailability" autocomplete="off">
                 <label style="padding-left: 10px;">List Now</label>
@@ -294,11 +297,11 @@
 <script>
     const product_name = document.querySelector(".productName");
     const product_price = document.querySelector(".productPrice");
+    const product_quantity = document.querySelector(".productQuantity");
     const product_availability = document.querySelector(".productAvailability");
 
     const plusButton = document.getElementById("add");
     const cancelButton = document.getElementById("cancel");
-
 
     plusButton.addEventListener("click", () => {
         document.querySelector(".container").classList.add("active");
@@ -322,6 +325,7 @@
             body: JSON.stringify({
                 ProductName: product_name.value,
                 ProductPrice: product_price.value,
+                ProductQuantity : product_quantity.value,
                 ProductAvailability: check
             }),
             headers: new Headers({

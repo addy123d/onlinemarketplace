@@ -35,10 +35,10 @@ function unauthenticated(request, response, next) {
 function authenticated(request, response, next) {
     if (request.session.email) {
         response.redirect("/");
-    }else if(request.session.adminAccess){
+    } else if (request.session.adminAccess) {
         response.redirect("/admin");
     }
-     else {
+    else {
         next();
     }
 }
@@ -60,16 +60,16 @@ mongo.connect(dbURL)
 
 
 // Routes
-app.get("/",(request,response)=>{
+app.get("/", (request, response) => {
     let sessionStatus = false;
 
     if (request.session.email != undefined || request.session.adminAccess) sessionStatus = true;
 
     Admin.find()
-        .then((assets)=>{
-            response.render("index", { sessionStatus : sessionStatus,products : assets });
+        .then((assets) => {
+            response.render("index", { sessionStatus: sessionStatus, products: assets });
         })
-        .catch(err=>console.log("Error: ",err));
+        .catch(err => console.log("Error: ", err));
 })
 
 app.get("/register", authenticated, (request, response) => {
@@ -103,7 +103,7 @@ app.post("/register", (request, response) => {
                     name: name,
                     email: email,
                     password: password,
-                    portfolio : []
+                    portfolio: []
                 }
 
                 new User(userObj).save()
@@ -119,7 +119,7 @@ app.post("/register", (request, response) => {
 
                         response.status(200).json({
                             responseCode: 200,
-                            access : "user"
+                            access: "user"
                         });
                     })
                     .catch(err => console.log("Error: ", err));
@@ -138,8 +138,8 @@ app.post("/login", (request, response) => {
     if (email === "admin@onlinemarket" || password === "000") {
         request.session.adminAccess = true;
         response.json({
-            responseCode : 200,
-            access : "admin"
+            responseCode: 200,
+            access: "admin"
         })
     } else {
         // Query Database
@@ -161,7 +161,7 @@ app.post("/login", (request, response) => {
 
                         response.status(200).json({
                             responseCode: 200,
-                            access : "user"
+                            access: "user"
                         })
                     } else {
                         response.status(503).json({
@@ -190,92 +190,126 @@ app.get("/admin", unauthenticated, (request, response) => {
 });
 
 // /order?type=buy&name=xyz&price=000&quantity
-app.get("/order",unauthenticated,(request,response)=>{
-    const { type, name, price} = request.query;
+app.get("/order", unauthenticated, (request, response) => {
+    const { type, name, price } = request.query;
     console.log(request.query);
 
-    response.render("bidform",{type,name,price});
+    response.render("bidform", { type, name, price });
 });
 
-app.post("/place",unauthenticated,(request,response)=>{
+app.post("/place", unauthenticated, (request, response) => {
     console.log(request.body);
-
+    let calculatedQuantity;
+    let buyFlag = false;
     let orderObj = {};
     orderObj.type = request.body.type;
     orderObj.name = request.body.name;
 
     // Differentiate between orders !
-    if(request.body.type === "sell"){
+    if (request.body.type === "sell") {
         orderObj.quantity = request.body.quantity;
-    }else{
+    } else {
         orderObj.price = request.body.price;
     }
 
+    Base.findOne({ name: request.body.name })
+        .then((asset) => {
+            // Compulsorily for buy orders !
+            if (request.body.type === "buy") {
+                // Check availability status
+                // formula = x = price entered/price of one quantity
+                calculatedQuantity = Number(request.body.price) / Number(asset.base_price);
+                console.log("Price Entered: ",request.body.price);
+                console.log("Calculated Quantity: ",calculatedQuantity);
 
-    // Place an order !
-    Orderbook.findOne({name : request.body.name})
-        .then((asset)=>{
-            if(asset){
-               if(request.body.type === "sell"){
-                // Sell Order Update Query
-                Orderbook.updateOne({
-                    name : request.body.name
-                },{
-                    $push : {sellOrders : {orderObj}}
-                },{
-                    $new  : true
-                })
-                .then(()=>{
-                    console.log("Order Placed !");
-                    response.json({
-                        message : "placed"
-                    })
-                })
-                .catch("Error: ",err);
-               }else{   
-                // Buy Order Update Query
-                Orderbook.updateOne({
-                    name : request.body.name
-                },{
-                    $push : {buyOrders : {orderObj}}
-                },{
-                    $new : true
-                })
-                .then(()=>{
-                    console.log("Order Placed !");
-                    response.json({
-                        message : "placed"
-                    })
-                })
-                .catch(err=>console.log("Error: ",err));
-               }
-            }else{
-               console.log(orderObj);
-                new Order(orderObj).save()
-                    .then(()=>{
-                        console.log("Order placed successfully !");
-                        // Add response !
-                        response.json({
-                            message : "placed"
-                        })
-                    })
-                    .catch(err=>console.log("Error: ",err));
+                if (calculatedQuantity <= asset.base_quantity) {
+                    buyFlag = true;
+                }
             }
+
+            // Place an order !
+            Orderbook.findOne({ name: request.body.name })
+                .then((asset) => {
+                    if (asset) {
+                        if (request.body.type === "sell") {
+                            // Sell Order Update Query
+                            Orderbook.updateOne({
+                                name: request.body.name
+                            }, {
+                                $push: { sellOrders: { orderObj } }
+                            }, {
+                                $new: true
+                            })
+                                .then(() => {
+                                    console.log("Order Placed !");
+                                    response.json({
+                                        message: "placed"
+                                    })
+                                })
+                                .catch("Error: ", err);
+                        } else {
+                            if (buyFlag) {
+                                // Buy Order Update Query
+                                Orderbook.updateOne({
+                                    name: request.body.name
+                                }, {
+                                    $push: { buyOrders: { orderObj } }
+                                }, {
+                                    $new: true
+                                })
+                                    .then(() => {
+                                        console.log("Order Placed !");
+                                        response.json({
+                                            message: "placed"
+                                        })
+                                    })
+                                    .catch(err => console.log("Error: ", err));
+                            } else {
+                                response.json({
+                                    message: "Quantity Error"
+                                })
+                            }
+
+                        }
+                    } else {
+                        console.log(orderObj);
+
+                        if (buyFlag) {
+                            new Order(orderObj).save()
+                                .then(() => {
+                                    console.log("Order placed successfully !");
+                                    // Add response !
+                                    response.json({
+                                        message: "placed"
+                                    })
+                                })
+                                .catch(err => console.log("Error: ", err));
+                        } else {
+                            response.json({
+                                message: "Quantity Error"
+                            })
+                        }
+
+                    }
+                })
+                .catch(err => console.log("Error: ", err));
+
         })
-        .catch(err=>console.log("Error: ",err));
+        .catch(err => console.log("Error: ", err));
 })
 
 
 app.post("/basedata", (request, response) => {
     console.log(request.body);
 
-    const { ProductName, ProductPrice, ProductAvailability } = request.body;
+    const { ProductName, ProductPrice, ProductQuantity, ProductAvailability } = request.body;
     let id = Date.now();
 
     let baseObj = {
         id: id,
         name: ProductName,
         base_price: ProductPrice,
+        base_quantity: ProductQuantity,
         availability: ProductAvailability
     };
 
