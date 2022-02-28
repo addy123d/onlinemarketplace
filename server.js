@@ -47,8 +47,8 @@ function authenticated(request, response, next) {
 const Base = require("./tables/Admin");
 const User = require("./tables/User");
 const Admin = require("./tables/Admin");
-const Order = require("./tables/Orderbook");
 const Orderbook = require("./tables/Orderbook");
+const trade = require("./utils/ordermatch");
 
 
 // Database Connection !
@@ -197,46 +197,77 @@ app.get("/order", unauthenticated, (request, response) => {
     response.render("bidform", { type, name, price });
 });
 
+// Calculate quantity function 
+function calculateQuantity(price,base_price){
+    return price / base_price;
+}
+
+// Calculate price function
+function calculatePrice(base_price,quantity){
+    return base_price * quantity;
+}
+
 app.post("/place", unauthenticated, (request, response) => {
     console.log(request.body);
     let calculatedQuantity;
     let buyFlag = false;
-    let orderObj = {};
-    orderObj.type = request.body.type;
-    orderObj.name = request.body.name;
+    let all_orders = [];
+
+    // orderObj = {
+    //     name : name,
+    //     sellOrders : [{},{},{}],
+    //     buyOrders : [{},{},{}]
+    // }
+    let order_document_object = {};
+    let order_object = {};
+    order_document_object.name = request.body.name;
+    order_document_object.sellOrders = [];
+    order_document_object.buyOrders = [];
 
     // Differentiate between orders !
     if (request.body.type === "sell") {
-        orderObj.quantity = request.body.quantity;
+        order_object.type = request.body.type;
+        order_object.quantity = request.body.quantity;
+
+        order_document_object.sellOrders.push(order_object);
     } else {
-        orderObj.price = request.body.price;
+        order_object.type = request.body.type;
+        order_object.price = request.body.price;
+
+        order_document_object.buyOrders.push(order_object);
     }
 
     Base.findOne({ name: request.body.name })
         .then((asset) => {
             // Compulsorily for buy orders !
             if (request.body.type === "buy") {
+
                 // Check availability status
                 // formula = x = price entered/price of one quantity
-                calculatedQuantity = Number(request.body.price) / Number(asset.base_price);
+                // calculatedQuantity = Number(request.body.price) / Number(asset.base_price);
+                calculatedQuantity = calculateQuantity(Number(request.body.price),Number(asset.base_price));
+                order_object.quantity = calculatedQuantity;  // Quantity for buy order !
                 console.log("Price Entered: ",request.body.price);
                 console.log("Calculated Quantity: ",calculatedQuantity);
 
                 if (calculatedQuantity <= asset.base_quantity) {
                     buyFlag = true;
                 }
+            }else if(request.body.type === "sell"){
+                let calculate_sell_price = calculatePrice(Number(asset.base_price),Number(request.body.quantity));
+                order_object.price = calculate_sell_price; //Price calculated via algo for sell order !
             }
 
             // Place an order !
             Orderbook.findOne({ name: request.body.name })
-                .then((asset) => {
-                    if (asset) {
+                .then((asset_order) => {
+                    if (asset_order) {
                         if (request.body.type === "sell") {
                             // Sell Order Update Query
                             Orderbook.updateOne({
                                 name: request.body.name
                             }, {
-                                $push: { sellOrders: { orderObj } }
+                                $push: { sellOrders: { type: order_object.type, quantity : order_object.quantity,price : order_object.price } }
                             }, {
                                 $new: true
                             })
@@ -246,22 +277,55 @@ app.post("/place", unauthenticated, (request, response) => {
                                         message: "placed"
                                     })
                                 })
-                                .catch("Error: ", err);
+                                .catch((err)=>{console.log("Error: ", err);});
                         } else {
                             if (buyFlag) {
                                 // Buy Order Update Query
                                 Orderbook.updateOne({
                                     name: request.body.name
                                 }, {
-                                    $push: { buyOrders: { orderObj } }
+                                    $push: { buyOrders: { type: order_object.type, quantity : order_object.quantity,price : order_object.price } }
                                 }, {
                                     $new: true
                                 })
                                     .then(() => {
                                         console.log("Order Placed !");
-                                        response.json({
-                                            message: "placed"
-                                        })
+                                        
+                                        // Start trade as it is a buy order !
+                                        Orderbook.findOne({name: request.body.name})
+                                            .then((orders)=>{
+                                                console.log(orders);
+                                                // For sell Orders !
+                                                orders.sellOrders.forEach(element => {
+                                                    all_orders.push(element); //Pushing all sell orders in all_orders array !
+                                                });
+
+                                                // For buy orders !
+                                                orders.buyOrders.forEach(element => {
+                                                    all_orders.push(element); //Pushing all buy orders in all_orders array !
+                                                });
+
+                                                // For admin order !
+                                                let admin_order_object = {};
+                                                admin_order_object.type = "sell";
+                                                admin_order_object.price = asset.base_price;
+                                                admin_order_object.quantity = asset.base_quantity;
+
+                                                all_orders.push(admin_order_object);
+
+                                                console.log(all_orders);
+                                                let result = trade(all_orders,request.body.name);
+                                                console.log("RESULT:    ");
+                                                console.log(result);
+
+                                                response.json({
+                                                    message: "placed"
+                                                })
+
+
+                                            })
+                                            .catch(err=>console.log(err));
+                                   
                                     })
                                     .catch(err => console.log("Error: ", err));
                             } else {
@@ -272,12 +336,36 @@ app.post("/place", unauthenticated, (request, response) => {
 
                         }
                     } else {
-                        console.log(orderObj);
+                        console.log("Document: ");
+                        console.log(order_document_object);
 
                         if (buyFlag) {
-                            new Order(orderObj).save()
-                                .then(() => {
+                            new Orderbook(order_document_object).save()
+                                .then((order) => {
                                     console.log("Order placed successfully !");
+
+                                    // For first order !
+                                     let first_order_object = {};
+                                     first_order_object.type = "buy";
+                                     first_order_object.price = Number(request.body.price);
+                                     first_order_object.quantity = Number(calculatedQuantity);
+
+                                     all_orders.push(first_order_object);
+
+                                     // For admin order !
+                                     let admin_order_object = {};
+                                     admin_order_object.type = "sell";
+                                     admin_order_object.price = asset.base_price;
+                                     admin_order_object.quantity = asset.base_quantity;
+
+                                     all_orders.push(admin_order_object);
+
+                                     console.log(all_orders);
+                                     let result = trade(all_orders,request.body.name);
+                                     console.log("RESULT:    ");
+                                     console.log(result);
+                                    
+
                                     // Add response !
                                     response.json({
                                         message: "placed"
