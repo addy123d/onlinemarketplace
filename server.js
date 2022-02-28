@@ -273,9 +273,44 @@ app.post("/place", unauthenticated, (request, response) => {
                             })
                                 .then(() => {
                                     console.log("Order Placed !");
-                                    response.json({
-                                        message: "placed"
+                                    Orderbook.findOne({name: request.body.name})
+                                    .then((orders)=>{
+                                        console.log(orders);
+                                        // For sell Orders !
+                                        orders.sellOrders.forEach(element => {
+                                            all_orders.push(element); //Pushing all sell orders in all_orders array !
+                                        });
+
+                                        // For buy orders !
+                                        orders.buyOrders.forEach(element => {
+                                            all_orders.push(element); //Pushing all buy orders in all_orders array !
+                                        });
+
+                                        // For admin order !
+                                        let admin_order_object = {};
+                                        admin_order_object.type = "sell";
+                                        admin_order_object.price = asset.base_price;
+                                        admin_order_object.quantity = asset.base_quantity;
+
+                                        all_orders.push(admin_order_object);
+
+                                        console.log(all_orders);
+                                        let result = trade(all_orders,request.body.name);
+                                        console.log("RESULT:    ");
+                                        console.log(result);
+
+                                        response.json({
+                                            message: "placed"
+                                        })
+
+
                                     })
+                                    .catch(err=>console.log(err));
+
+                                    
+                                    // response.json({
+                                    //     message: "placed"
+                                    // })
                                 })
                                 .catch((err)=>{console.log("Error: ", err);});
                         } else {
