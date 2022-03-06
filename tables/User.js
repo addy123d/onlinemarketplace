@@ -13,7 +13,15 @@ const userSchema = new schema({
     password : {
         type : String,
         required : true
-    }
+    },
+    portfolio : [{
+        name : {
+            type : String
+        },
+        no_of_shares : {
+            type : Number
+        }
+    }]
 })
 
 module.exports = User = mongo.model("myUser",userSchema);

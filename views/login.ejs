@@ -298,12 +298,19 @@
        fetch('/login',options)
         .then(res=>res.json())
         .then((result)=>{
-            if(result.responseCode === 200){
+            console.log(result);
+            if(result.responseCode === 200 && result.access === "user"){
                 document.querySelector(".notify").innerHTML = "<h2>Success ! ✔</h2>";
                 document.querySelector(".notify").classList.add("active");
 
                 location.href = "http://127.0.0.1:5500/";
-            }else{
+            }else if(result.responseCode === 200 && result.access === "admin"){
+                document.querySelector(".notify").innerHTML = "<h2>Success ! ✔</h2>";
+                document.querySelector(".notify").classList.add("active");
+
+                location.href = "http://127.0.0.1:5500/admin";
+            }
+            else{
                 document.querySelector(".notify").innerHTML = "<h2>Failed</h2>";
                 document.querySelector(".notify").classList.add("active");
             }

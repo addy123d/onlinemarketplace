@@ -11,7 +11,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
         integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
-    <title>Login</title>
+    <title>Order Place</title>
 </head>
 <style>
     * {
@@ -263,23 +263,30 @@
 
         <!-- Form -->
         <div class="form">
-            <h2>Start Bidding</h2>
+            <h2>Start Trading</h2>
 
             <div class="topic">
-                <input type="text" name="id" id="productID" value="<%=productId%>" readonly>
+                <input type="text" name="id" id="name" value="<%=name%>" readonly>
                 <i class="fa fa-info-circle" aria-hidden="true"></i>
             </div>
-            <div class="topic">
-                <input type="text" name="price" id="price" placeholder="Price" required>
-                <i class="fa fa-rupee" aria-hidden="true"></i>
-            </div>
-            <div class="number">
-                <input type="text" name="quantity" id="quantity" placeholder="Quantity" autocomplete="off">
-                <i class="fa fa-object-group" aria-hidden="true"></i>
-            </div>
-            <div class="btn">
-                <button type="submit" id="bidbtn">Start ▶</button>
-            </div>
+
+            <%if(type==="sell"){%>
+                <div class="topic">
+                    <input type="text" name="quantity" id="quantity" placeholder="Enter Quantity">
+                </div>
+                <div class="btn">
+                    <button type="submit" id="sellbtn">Sell</button>
+                </div>
+            <%}else{%>
+                <div class="topic">
+                    <input type="text" name="price" id="price" placeholder="Enter Price">
+                    <i class="fa fa-rupee" aria-hidden="true"></i>
+                </div>
+                <div class="btn">
+                    <button type="submit" id="buybtn">Buy</button>
+                </div>
+                <%}%>
+        
             <div class="btn">
                 <a href="/logout"><button type="submit">Logout</button></a>
             </div>
@@ -292,55 +299,58 @@
     </div>
 </body>
 <script>
-    const id = document.getElementById("productID");
+    const name = document.getElementById("name");
     const price = document.getElementById("price");
     const quantity = document.getElementById("quantity");
-    const bid_button = document.getElementById("bidbtn");
+    let ordertype = `<%=type%>`;
 
-    bid_button.addEventListener("click",()=>{
-        const options = {
-            method : "POST",
-            body : JSON.stringify({
-                id : id.value,
-                price : price.value,
+    let options = {
+        method : 'POST',
+        headers : new Headers({
+            'Content-type' : 'application/json'
+        })
+    }
+
+    function placeOrder(){
+        if(ordertype === "sell"){
+        options.body =  JSON.stringify({
+                type : ordertype,
+                name : name.value,
                 quantity : quantity.value
-            }),
-            headers : new Headers({
-                'Content-Type' : 'application/json'
             })
-        }
+    }else{
+        options.body =  JSON.stringify({
+                type : ordertype,
+                name : name.value,
+                price : price.value
+            })
+  
+    }
 
-        fetch('/process',options)
+        fetch("/place",options)
             .then(res=>res.json())
             .then((result)=>{
                 console.log(result);
-                if(result.order === "complete"){
-                    document.querySelector(".notify").innerHTML = "Complete";
-                    document.querySelector(".notify").classList.add("active");
+                alert(result.message);
 
-                    document.querySelector(".message").innerHTML = "<h4>Mail Sent ✔</h4>";
-                }else if(result.order === "partial"){
-                    document.querySelector(".notify").innerHTML = "Partial";
-                    document.querySelector(".notify").classList.add("active");
 
-                    document.querySelector(".message").innerHTML = "<h4>Mail Sent ✔</h4>";
+                // Clear out the inputs !
+                if(ordertype === "sell"){
+                    quantity.value = "";
                 }else{
-                    document.querySelector(".notify").innerHTML = "Invalid";
-                    document.querySelector(".notify").classList.add("active");
+                    price.value = "";
                 }
-
-                setTimeout(()=>{
-                    document.querySelector(".notify").classList.remove("active");
-                    document.querySelector(".message").innerHTML = "";
-                },3000)
             })
-            .catch(err=>console.log("Error: ",err));
+            .catch(err=>console.error("Error: ",err));
+    }
 
-
-            price.value = "";
-            quantity.value = "";
-    })
-
+    if(ordertype === "sell"){ 
+        let sell_button = document.getElementById("sellbtn");
+        sell_button.addEventListener("click",placeOrder);
+    }else{
+        let buy_button = document.getElementById("buybtn");
+        buy_button.addEventListener("click",placeOrder);
+    }
 
 </script>
 

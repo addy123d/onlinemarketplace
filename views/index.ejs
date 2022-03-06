@@ -158,9 +158,6 @@ button:hover span:after {
 
         <div class="buttons">
         <%if(sessionStatus){%>
-            <div class="btn1">
-                <a href="/sellerdashboard"><button>Sell Product</button></a>
-            </div>
 
             <div class="btn2">
                 <a href="/logout"><button>Logout</button></a>
@@ -178,54 +175,16 @@ button:hover span:after {
                 <article>
                     <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp" alt="">
                     <div class="content">
-                        <div class="name"><p>Name: <%=products[i].productName%></p></div>
-                        <div class="price"><p>Price: <%=products[i].productPrice%></p></div>
-                        <div class="quantity"><p>Quantity: <%=products[i].productQuantity%></p></div>
+                        <div class="name"><p>Name: <%=products[i].name%></p></div>
+                        <div class="price"><p>Price: <%=products[i].base_price%></p></div>
+                        <div class="quantity"><p>Quantity: <%=products[i].base_quantity%></p></div>
                     </div>
-                    <a href="/bidForm?productID=<%=products[i]._id%>"><button>  <span> Bid
+                    <a href="/placeorder?productID=<%=products[i]._id%>&type=bid&name=<%=products[i].name%>&price=<%=products[i].base_price%>"><button>  <span> Bid
+                    </span></button></a>
+                    <a href="/placeorder?productID=<%=products[i]._id%>&type=sell&name=<%=products[i].name%>&price=<%=products[i].base_price%>"><button>  <span> Sell
                     </span></button></a>
             </article>
                 <%}%>
-            <!-- <article>
-                    <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp" alt="">
-                    <div class="content">
-                        <div class="name"><p>Name: Onion</p></div>
-                        <div class="price"><p>Price: 100</p></div>
-                        <div class="quantity"><p>Quantity: 20</p></div>
-                    </div>
-                    <button>  <span> Bid
-                    </span></button>
-            </article>
-            <article>
-                <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp" alt="">
-                <div class="content">
-                    <div class="name"><p>Name: Onion</p></div>
-                    <div class="price"><p>Price: 100</p></div>
-                    <div class="quantity"><p>Quantity: 20</p></div>
-                </div>
-                <button>  <span> Bid
-  </span></button>
-            </article>
-            <article>
-                <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp" alt="">
-                <div class="content">
-                    <div class="name"><p>Name: Onion</p></div>
-                    <div class="price"><p>Price: 100</p></div>
-                    <div class="quantity"><p>Quantity: 20</p></div>
-                </div>
-                <button>  <span> Bid
-  </span></button>
-            </article>
-            <article>
-                <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp" alt="">
-                <div class="content">
-                    <div class="name"><p>Name: Onion</p></div>
-                    <div class="price"><p>Price: 100</p></div>
-                    <div class="quantity"><p>Quantity: 20</p></div>
-                </div>
-                <button>  <span> Bid
-  </span></button>
-            </article> -->
         </div>
 
     </section>

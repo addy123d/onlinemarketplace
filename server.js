@@ -2,20 +2,20 @@ const express = require("express");
 const mongo = require("mongoose");
 const session = require('express-session');
 const dbConfiguration = require("./setup/config");
-const {buyerMail,partialMail} = require("./utils/email");
+const { buyerMail, partialMail } = require("./utils/email");
 const ejs = require("ejs");
 const port = process.env.PORT || 5500;
 const host = "127.0.0.1";
 
 // Import Tables !
 const User = require("./tables/User");
-const Seller = require("./tables/Seller");
-const Product = require("./tables/Products");
+const Seller = require("./tables/OrderBook");
+const Products = require("./tables/Admin");
 
 // Include Order Matching Algorithm 
 const createOrderBook_result = require("./utils/ordermatch");
 const { request } = require("express");
-const Products = require("./tables/Products");
+// const Products = require("./tables/Admin");
 
 // Connect our Mongo DB Database !
 mongo.connect(dbConfiguration.url) //Why using then-catch, to avoid code crash and
@@ -49,7 +49,7 @@ app.use(session({
 function unauthenticated(request, response, next) {
     console.log(request.session);
 
-    if (request.session.email != undefined) {
+    if (request.session.email != undefined || request.session.adminAccess) {
         next();
     } else {
         response.redirect("/login");
@@ -59,6 +59,8 @@ function unauthenticated(request, response, next) {
 function authenticated(request, response, next) {
     if (request.session.email) {
         response.redirect("/");
+    } else if (request.session.adminAccess) {
+        response.redirect("/admin");
     } else {
         next();
     }
@@ -81,13 +83,11 @@ app.get("/", (request, response) => {
 
     if (request.session.email != undefined) sessionStatus = true;
 
-    Product.find()
-        .then((products)=>{
-            response.render("index", { sessionStatus,products });
+    Products.find()
+        .then((products) => {
+            response.render("index", { sessionStatus, products });
         })
-        .catch(err=>console.log("Error: ",err));
-
-  
+        .catch(err => console.log("Error: ", err));
 })
 
 app.get("/register", authenticated, (request, response) => {
@@ -113,7 +113,7 @@ app.post("/register", (request, response) => {
                 // If email already exists !, our email matches with any mail in the document 
                 response.status(503).json({
                     "message": "Email ID already registered",
-                    responseCode : 503
+                    responseCode: 503
                 })
             } else {
                 // This is our first time user, so save his/her data !
@@ -121,7 +121,8 @@ app.post("/register", (request, response) => {
                 let userObj = {
                     name: name,
                     email: email,
-                    password: password
+                    password: password,
+                    portfolio: []
                 }
 
                 new User(userObj).save()
@@ -136,7 +137,8 @@ app.post("/register", (request, response) => {
                         console.log(request.session);
 
                         response.status(200).json({
-                            responseCode : 200
+                            responseCode: 200,
+                            access: "user"
                         });
                     })
                     .catch(err => console.log("Error: ", err));
@@ -152,140 +154,102 @@ app.post("/login", (request, response) => {
 
     const { email, password } = request.body;
 
-    // Query Database
+    if (email === "admin@onlinemarket" || password === "000") {
+        request.session.adminAccess = true;
+        response.json({
+            responseCode: 200,
+            access: "admin"
+        })
+    } else {
 
-    User.findOne({ email: email })
-        .then((person) => {
-            if (person) {
-                // Match password 
-                if (password === person.password) {
+        // Query Database
 
-                    request.session.user_name = person.name;
-                    request.session.email = person.email;
-                    request.session.password = person.password;
+        User.findOne({ email: email })
+            .then((person) => {
+                if (person) {
+                    // Match password 
+                    if (password === person.password) {
+                        console.log("Success Entry !");
+                        request.session.user_name = person.name;
+                        request.session.email = person.email;
+                        request.session.password = person.password;
 
-                    console.log("Session: ");
-                    console.log(request.session);
+                        console.log("Session: ");
+                        console.log(request.session);
 
-                    // response.status(200).redirect("/");
+                        // response.status(200).redirect("/");
 
-                    response.status(200).json({
-                        responseCode : 200
-                    })
+                        response.status(200).json({
+                            responseCode: 200,
+                            access: "user"
+                        })
+                    } else {
+                        response.status(503).json({
+                            responseCode: 503,
+                            access: "user"
+                        })
+                    }
                 } else {
+                    console.log("Email not registered !");
                     response.status(503).json({
-                        responseCode : 503
+                        responseCode: 503
                     })
                 }
-            } else {
-                console.log("Email not registered !");
-                response.status(503).json({
-                    responseCode : 503
-                })
-            }
-        })
-        .catch(err => console.log("Error: ", err));
+            })
+            .catch(err => console.log("Error: ", err));
 
+    }
 
 })
 
 
-app.get("/bidForm",unauthenticated,(request,response)=>{
-    const productId = request.query.productID;
+// app.get("/bidForm", unauthenticated, (request, response) => {
+//     const productId = request.query.productID;
 
-    response.render("bidform",{productId});
+//     response.render("bidform", { productId });
+// })
+
+app.get("/placeorder", unauthenticated, (request, response) => {
+    const name = request.query.name;
+    const type = request.query.type;
+    const price = request.query.price;
+
+    response.render("bidform", { type, name, price });
 })
 
-app.post("/askData", (request, response) => {
-    let { ProductName, ProductPrice, ProductQuantity } = request.body;
-    ProductName = ProductName.toLowerCase();
-    ProductPrice = Number(ProductPrice);
-    ProductQuantity = Number(ProductQuantity);
+app.post("/adminData", (request, response) => {
+    let { name, base_price, base_quantity } = request.body;
+    name = name.toLowerCase();
+    base_price = Number(base_price);
+    base_quantity = Number(base_quantity);
 
-    if (ProductName != "" && ProductPrice != "" && ProductQuantity != "") {
+    if (name != "" && base_price != "" && base_quantity != "") {
         // Add products in seller data !
         // Step-1 : Will check for product name uniqueness
         // Step-2 : Add user as a seller in seller table
         // Step-3 : Store same product in products table simultaneously!
-        Products.findOne({ productName: ProductName })
+        Products.findOne({ name: name })
             .then((product) => {
                 if (product) {
                     response.status(503).json({
                         message: "Product already exists !"
                     })
                 } else {
-                    // Check whether user is first time seller or not !
-                    Seller.findOne({ email: request.session.email })
-                        .then((seller) => {
-                            if (seller) {
-                                // Update his/her products !
-                                Seller.updateOne({
-                                    email: request.session.email
-                                }, {
-                                    $push: {products : {
-                                        'productName' : ProductName, 
-                                        'productPrice' : ProductPrice,
-                                        'productQuantity': ProductQuantity 
-                                    }
-                                }
-                                }, {
-                                    $new: true
-                                })
-                                    .then(() => {
-                                        let productObject = {
-                                            seller_name: request.session.user_name,
-                                            email: request.session.email,
-                                            productName: ProductName,
-                                            productPrice: ProductPrice,
-                                            productQuantity: ProductQuantity
-                                        }
+                    // Create new Document for seller
 
-                                        new Product(productObject).save()
-                                            .then(() => {
-                                                response.status(200).json({
-                                                    message: "Success ✔"
-                                                })
-                                            })
-                                            .catch(err => console.log("Error: ", err));
-                                    })
-                                    .catch(err => console.log("Error: ", err));
-                            } else {
-                                // Create new Document for seller
+                    let productObject = {
+                        name: name,
+                        base_price: base_price,
+                        base_quantity: base_quantity
+                    }
 
-                                let productObject = {
-                                    productName : ProductName , 
-                                    productPrice : ProductPrice, 
-                                    productQuantity : ProductQuantity
-                                }
+                    new Products(productObject).save()
+                        .then(() => {
 
-                                const newSellerObject = {
-                                    seller_name: request.session.user_name,
-                                    email: request.session.email,
-                                    products: [productObject]
-                                }
+                            response.status(200).json({
+                                message: "Success ✔"
+                            })
 
-                                new Seller(newSellerObject).save()
-                                    .then(() => {
-
-                                        let productObject = {
-                                            seller_name: request.session.user_name,
-                                            email: request.session.email,
-                                            productName: ProductName,
-                                            productPrice: ProductPrice,
-                                            productQuantity: ProductQuantity
-                                        }
-
-                                        new Product(productObject).save()
-                                            .then(() => {
-                                                response.status(200).json({
-                                                    message: "Success ✔"
-                                                })
-                                            })
-                                            .catch(err => console.log("Error: ", err));
-
-                                    })
-                                    .catch(err => console.log("Error: ", err));
-                            }
                         })
                         .catch(err => console.log("Error: ", err));
                 }
@@ -298,8 +262,11 @@ app.post("/askData", (request, response) => {
     }
 });
 
+// Route for order placing in mongodb
+
 // type - POST
 // route - /process
+// Desc - trade
 app.post("/process", (request, response) => {
 
     if (request.session.email != undefined) {
@@ -323,136 +290,136 @@ app.post("/process", (request, response) => {
                 console.log("Partial Array: ");
                 console.log(partialData);
 
-                if(product.productQuantity === 0){
+                if (product.productQuantity === 0) {
                     response.status(503).json({
-                        message : "Zero quantity error",
-                        order : "invalid",
-                        responseCode : 503
+                        message: "Zero quantity error",
+                        order: "invalid",
+                        responseCode: 503
                     })
-                }else{
+                } else {
                     let partialPrice = 0;
                     let partialQuantity = 0;
-    
+
                     // Delete partial order if exists !
                     if (partialData.length != 0) {
                         partialPrice = partialData[0].price;
                         partialQuantity = partialData[0].quantity;
-    
+
                         let body = `Congratulations, Your pending order is about to get completed !
                                     Order Details: 
                                     Order Name: ${productName}
                                     Order Price: ${partialData[0].price}
                                     Order Quantity: ${partialData[0].quantity}`
-    
+
                         // Send Mail to partial User!
-                        partialMail(partialData[0].email,body,(err)=>{
-                            if(err){
+                        partialMail(partialData[0].email, body, (err) => {
+                            if (err) {
                                 console.log("Mail error");
-//                                 response.status(503).json({
-//                                     message : `Mail Error`,
-//                                     order : "complete"
-//                                     responseCode : 503
-//                                 })
-                            }else{
+                                //                                 response.status(503).json({
+                                //                                     message : `Mail Error`,
+                                //                                     order : "complete"
+                                //                                     responseCode : 503
+                                //                                 })
+                            } else {
                                 console.log("Your Partial order is about to get completed !");
-//                                 response.status(200).json({
-//                                     message : `Mail sent....Partial Order Completed !`,
-//                                     order : "complete",
-//                                     responseCode : 200
-//                                 })
+                                //                                 response.status(200).json({
+                                //                                     message : `Mail sent....Partial Order Completed !`,
+                                //                                     order : "complete",
+                                //                                     responseCode : 200
+                                //                                 })
                             }
-                            });
+                        });
                         // Delete Partial Data array !
                         partialData.splice(0, 1);
                     }
-    
+
                     console.log("Partial Price: ", partialPrice);
                     console.log("Partial Quantity: ", partialQuantity);
-    
+
                     let newValuesObj = createOrderBook_result(product.productName, Number(product.productPrice), Number(product.productQuantity), Number(bidPrice), Number(bidQuantity), Number(partialPrice), Number(partialQuantity));
-    
-                    let updatedPrice,updatedQuantity = product.productQuantity;
+
+                    let updatedPrice, updatedQuantity = product.productQuantity;
                     if (newValuesObj === -1) {
                         response.status(503).json({
                             message: "Order is invalid...try later !",
-                            order : "invalid",
-                            responseCode : 503
+                            order: "invalid",
+                            responseCode: 503
                         })
                     } else {  //When order matches or partially matches !
                         console.log("New Value Object Generated: ");
                         console.log(newValuesObj);
-    
+
                         // Update Ask price if needed !
                         if (product.productPrice != newValuesObj.price) {
                             updatedPrice = newValuesObj.price; //Updated values of price !
                         }
-    
+
                         // Update quantity 
                         // console.log("Ask Quantity: ", product.quantity);
                         console.log("New Object Quantity: ", newValuesObj.quantity);
                         if (product.productQuantity != newValuesObj.quantity) {
-    
+
                             console.log("Ready for partial Data !");
                             //Update quantity, insert partially matched item in partialData array !
                             updatedQuantity = newValuesObj.quantity; //Updated values of quantity !
-    
+
                             if (newValuesObj.order_status === "Order is Partially Completed") {
                                 // Partial Data !
                                 let partialItemObject = {
                                     sellerName: product.seller_name,
-                                    email : request.session.email,
+                                    email: request.session.email,
                                     name: newValuesObj.name,
                                     price: newValuesObj.partialPrice,
                                     quantity: newValuesObj.partialQuantity
                                 }
-    
+
                                 partialData.push(partialItemObject);
                             }
-    
-    
+
+
                         }
-    
+
                         // Send a notification to seller and simultaneously update product database !
                         Seller.updateOne(
                             {
-                                email : product.email
+                                email: product.email
                             },
-                            { $set: { "products.$[elem].productPrice" : updatedPrice,"products.$[elem].productQuantity" : updatedQuantity } },
-                            { arrayFilters: [ { "elem.productName": { $gte: product.productName } } ] })
-                            .then(()=>{
-    
+                            { $set: { "products.$[elem].productPrice": updatedPrice, "products.$[elem].productQuantity": updatedQuantity } },
+                            { arrayFilters: [{ "elem.productName": { $gte: product.productName } }] })
+                            .then(() => {
+
                                 // Update Product Database !
                                 Product.updateOne(
                                     {
-                                        productName: product.productName 
+                                        productName: product.productName
                                     },
                                     {
-                                        $set : {productPrice: updatedPrice,productQuantity : updatedQuantity}
+                                        $set: { productPrice: updatedPrice, productQuantity: updatedQuantity }
                                     },
                                     {
-                                        $new : true
+                                        $new: true
                                     }
                                 )
-                                .then(()=>{
-                                    let subject = "";
-                                    let body = "";
-                                    let order = "";
-                                    if(newValuesObj.order_code === 200){
+                                    .then(() => {
+                                        let subject = "";
+                                        let body = "";
+                                        let order = "";
+                                        if (newValuesObj.order_code === 200) {
 
-                                        subject = "Online Marketplace: Order Completed";
-                                        order = "complete";
-                                        body = `Hello ${request.session.user_name}, 
+                                            subject = "Online Marketplace: Order Completed";
+                                            order = "complete";
+                                            body = `Hello ${request.session.user_name}, 
                                                 Your Order is Completed !
 
                                                 Product Name: ${product.productName}
                                                 Product Price: ${bidPrice}
                                                 Product Quantity: ${bidQuantity}`;
 
-                                    }else if(newValuesObj.order_code === 201) {
+                                        } else if (newValuesObj.order_code === 201) {
 
-                                        subject = "Online Marketplace: Order Partially Completed";
-                                        order = "partial";
-                                        body = `Hello ${request.session.user_name}, 
+                                            subject = "Online Marketplace: Order Partially Completed";
+                                            order = "partial";
+                                            body = `Hello ${request.session.user_name}, 
                                                 Your Order is Partially Completed !
             
                                                 Product Name: ${product.productName}
@@ -464,57 +431,42 @@ app.post("/process", (request, response) => {
                                                 Product Price: ${newValuesObj.partialPrice}
                                                 Product Quantity: ${newValuesObj.partialQuantity}
                                                 `;
-                                                
-                                    }                        
-                                    // Send order notification to buyer !
-                                    buyerMail(request.session.email,subject,body,(err)=>{
-                                        if(err){
-                                            response.status(503).json({
-                                                message : `Mail Error`,
-                                                order: order
-                                            })
-                                        }else{
-                                            response.status(200).json({
-                                                message : `Mail sent ! ${subject}`,
-                                                order : order
-                                            })
+
                                         }
-                                    });
-                                })
-                                .catch(err=>console.log("Error: ",err));
+                                        // Send order notification to buyer !
+                                        buyerMail(request.session.email, subject, body, (err) => {
+                                            if (err) {
+                                                response.status(503).json({
+                                                    message: `Mail Error`,
+                                                    order: order
+                                                })
+                                            } else {
+                                                response.status(200).json({
+                                                    message: `Mail sent ! ${subject}`,
+                                                    order: order
+                                                })
+                                            }
+                                        });
+                                    })
+                                    .catch(err => console.log("Error: ", err));
                             })
-                            .catch(err=>console.log("Error: ",err));
+                            .catch(err => console.log("Error: ", err));
                     }
                 }
 
 
-                })
+            })
             .catch(err => console.log("Error: ", err));
 
 
     } else {
         response.status(200).redirect("/login");
     }
-
-
 })
 
-app.get("/sellerdashboard", unauthenticated, (request, response) => {
+app.get("/admin", unauthenticated, (request, response) => {
 
-    Seller.findOne({seller_name : request.session.user_name})
-        .then((seller)=>{
-            if(seller != null){
-                response.render("sellerdashboard",{
-                    products : seller.products
-                });
-            }else{
-                response.render("sellerdashboard",{
-                    products : ""
-                });
-            }
-
-        })
-        .catch(err=>console.log("Error: ",err));
+    response.render("admin");
 
 });
 

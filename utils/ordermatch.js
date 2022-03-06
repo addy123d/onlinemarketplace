@@ -44,7 +44,17 @@ if(partialQuantity === 0){
 
         return newQuantity;
     }else{
-        return -1; // For invalid orders !
+        
+        // Limit (Minimal) Order (when bidprice ) 
+        newQuantity.name = order_name;
+        newQuantity.price = bidPrice;
+        newQuantity.quantity = bidQuantity;
+        newQuantity.partialPrice = quantityObj.price;
+        newQuantity.partialQuantity = quantityObj.size;
+        newQuantity.order_code = 201;
+
+        // return -1; // For invalid orders !
+
     }
 
 }else{
