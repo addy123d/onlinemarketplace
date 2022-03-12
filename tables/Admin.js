@@ -11,7 +11,7 @@ const baseSchema = new schema({
         required : true
     },
     base_quantity :{
-        type : String,
+        type : Number,
         required: true
     }
 })

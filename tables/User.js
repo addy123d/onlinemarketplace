@@ -18,6 +18,9 @@ const userSchema = new schema({
         name : {
             type : String
         },
+        price : {
+            type : Number
+        },
         no_of_shares : {
             type : Number
         }

@@ -9,13 +9,12 @@ const host = "127.0.0.1";
 
 // Import Tables !
 const User = require("./tables/User");
-const Seller = require("./tables/OrderBook");
+const OrderBook = require("./tables/OrderBook");
 const Products = require("./tables/Admin");
 
 // Include Order Matching Algorithm 
 const createOrderBook_result = require("./utils/ordermatch");
-const { request } = require("express");
-// const Products = require("./tables/Admin");
+const pricetimepriorty = require("./utils/pricetimepriorty");
 
 // Connect our Mongo DB Database !
 mongo.connect(dbConfiguration.url) //Why using then-catch, to avoid code crash and
@@ -262,7 +261,188 @@ app.post("/adminData", (request, response) => {
     }
 });
 
+// Calculate quantity function 
+function calculateQuantity(price, base_price) {
+    return price / base_price;
+}
+
+// Calculate price function
+function calculatePrice(base_price, quantity) {
+    return base_price * quantity;
+}
+
 // Route for order placing in mongodb
+app.post("/place", unauthenticated, (request, response) => {
+    console.log(request.body);
+    let calculatedEntity, buyOrder_success = false;
+
+    Products.findOne({ name: request.body.name })
+        .then((product) => {
+
+            // Calculate respective price and quantity !
+            if (request.body.type === "sell") {
+                // Calculate price for sell quantity
+                calculatedEntity = calculatePrice(Number(request.body.sellerBase_price), Number(request.body.quantity));
+            } else {
+                // Calculate quantity for buy price
+                calculatedEntity = calculateQuantity(Number(request.body.price), Number(product.base_price));
+                if (calculatedEntity < product.base_quantity) {
+                    // First order will be accepted !
+                    buyOrder_success = true;
+                }
+            }
+
+
+
+
+            // Now,place the order, Imposter one is first buy order, so seperate that out and store all other orders !
+
+            OrderBook.findOne({ name: product.name })
+                .then((asset) => {
+                    if (asset) {
+                        console.log(asset);
+                        // Trading begins....
+
+                        if(request.body.type === "sell"){
+                            // Sell order section
+                            // name,price,quantity
+                            let sellOrderObject = {
+                                name : product.name,
+                                base_price : Number(request.body.sellerBase_price),
+                                price : calculatedEntity,
+                                quantity : Number(request.body.quantity)
+                            }
+
+                            // Update Orderbook
+                            OrderBook.updateOne({
+                                name : product.name
+                            },{
+                                $push : {
+                                    sellOrders : sellOrderObject
+                                }
+                            },{
+                                $new : true
+                            })
+                                .then(()=>{
+                                    console.log("Order Updated !");
+                                    response.json({
+                                        message : "Sell Order placed"
+                                    })
+                                })
+                                .catch(err=>console.log("Error: ",err));
+                        }else{
+                            // Buy order section
+                            OrderBook.findOne({name : product.name})
+                                .then((order)=>{
+                                    let sellOrders = order.sellOrders;
+
+                                    if(sellOrders.length === 0){
+                                        let buyOrderObject = {
+                                            name : product.name,
+                                            price : Number(request.body.price),
+                                            quantity : calculatedEntity
+                                        }
+                                        // Update Buy orders in orderbook
+                                        OrderBook.updateOne({
+                                            name : product.name
+                                        },{
+                                            $push : {
+                                                buyOrders : buyOrderObject
+                                            }
+                                        },{
+                                            $new : true
+                                        })
+                                            .then(()=>{
+                                                console.log("Order Updated !");
+
+                                                response.json({
+                                                    message : "Buy Order Placed"
+                                                })
+                                            })
+                                            .catch(err=>console.log("Error: ",err));
+                                    }else{
+                                        // Use price time priorty for selecting perfect sell order for our buy order !
+                                        console.log("Sell Orders: ");
+                                        console.log(sellOrders);
+                                        pricetimepriorty(sellOrders);
+                                    }
+                                })
+                                .catch(err=>console.log("Error: ",err));
+                        }
+
+
+                    } else {
+                        // This else will handle first buy order and create document for orders for these asset!
+                        // Let's first create an empty document
+                        console.log("Empty Document !");
+
+                        if (request.body.type === "sell") {
+                            response.json({
+                                message: "First Order can't be sell order !"
+                            })
+                        } else {
+                            // For first buy order !
+                            // calculated quantity < asset quantity !
+                            if (buyOrder_success) {
+                                // Store this asset in user's portfolio !
+                                User.updateOne({
+                                    email: request.session.email
+                                }, {
+                                    $push: {
+                                        portfolio: {
+                                            name: product.name,
+                                            price: Number(request.body.price),
+                                            no_of_shares: calculatedEntity
+                                        }
+                                    }
+                                }, {
+                                    $new: true
+                                })
+                                    .then(() => {
+                                        console.log("Portfolio Updated !");
+
+                                        // Create empty order document !
+                                        let orderObject = {
+                                            name: product.name,
+                                            sellOrders: [{
+                                                name : product.name, 
+                                                base_price : product.base_price,
+                                                price :  Number(product.base_price) * Number(product.base_quantity),
+                                                quantity : product.base_quantity
+                                            }],
+                                            buyOrders: []
+                                        }
+
+                                        new OrderBook(orderObject).save()
+                                            .then(() => {
+                                                response.json({
+                                                    message: "Success"
+                                                })
+                                            })
+                                            .catch(err => console.log("Error: ", err));
+
+                                    })
+                                    .catch(err => console.log("Error: ", err));
+                            }
+
+
+                        }
+
+
+
+
+                    }
+                })
+                .catch(err => console.error("Error: ", err));
+
+
+        })
+        .catch(err => console.error("Error: ", err));
+
+
+
+
+})
 
 // type - POST
 // route - /process
