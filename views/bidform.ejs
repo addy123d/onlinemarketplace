@@ -285,6 +285,9 @@
                     <input type="text" name="price" id="price" placeholder="Enter Price">
                     <i class="fa fa-rupee" aria-hidden="true"></i>
                 </div>
+                <div class="topic">
+                    <input type="text" name="quantity" id="buyerBase_price" placeholder="Enter Base Price">
+                </div>
                 <div class="btn">
                     <button type="submit" id="buybtn">Buy</button>
                 </div>
@@ -306,6 +309,7 @@
     let price = document.getElementById("price");
     let quantity = document.getElementById("quantity");
     let sellerBase_price = document.getElementById("sellerBase_price");
+    let buyerBase_price = document.getElementById("buyerBase_price");
 
     let ordertype = `<%=type%>`;
 
@@ -328,7 +332,8 @@
         options.body =  JSON.stringify({
                 type : ordertype,
                 name : name.value,
-                price : price.value
+                price : price.value,
+                buyerBase_price : buyerBase_price.value
             })
   
     }

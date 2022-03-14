@@ -310,7 +310,8 @@ app.post("/place", unauthenticated, (request, response) => {
                                 name : product.name,
                                 base_price : Number(request.body.sellerBase_price),
                                 price : calculatedEntity,
-                                quantity : Number(request.body.quantity)
+                                quantity : Number(request.body.quantity),
+                                date : new Date().toString()
                             }
 
                             // Update Orderbook
@@ -339,8 +340,10 @@ app.post("/place", unauthenticated, (request, response) => {
                                     if(sellOrders.length === 0){
                                         let buyOrderObject = {
                                             name : product.name,
+                                            base_price : umber(request.body.buyerBase_price),
                                             price : Number(request.body.price),
-                                            quantity : calculatedEntity
+                                            quantity : calculatedEntity,
+                                            date : new Date().toString()
                                         }
                                         // Update Buy orders in orderbook
                                         OrderBook.updateOne({
@@ -364,7 +367,11 @@ app.post("/place", unauthenticated, (request, response) => {
                                         // Use price time priorty for selecting perfect sell order for our buy order !
                                         console.log("Sell Orders: ");
                                         console.log(sellOrders);
-                                        pricetimepriorty(sellOrders);
+                                        let probable_sellOrder = pricetimepriorty(sellOrders);
+
+                                        // Trade
+                                        // createOrderBook_result(probable_sellOrder.name, Number(probable_sellOrder.base_price), Number(probable_sellOrder.quantity), Number(bidPrice), Number(bidQuantity), Number(partialPrice), Number(partialQuantity));
+
                                     }
                                 })
                                 .catch(err=>console.log("Error: ",err));
