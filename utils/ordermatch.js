@@ -11,6 +11,7 @@ function createOrderBook_result(order_name,askPrice,askQuantity,bidPrice,bidQuan
     let quantityObj;
 
 if(partialQuantity === 0){
+    console.log("Hit hit hit");
     orderpartialBid = null;
     // Check which type of order !
     // Perfect Order
@@ -46,14 +47,14 @@ if(partialQuantity === 0){
     }else{
         
         // Limit (Minimal) Order (when bidprice ) 
-        newQuantity.name = order_name;
-        newQuantity.price = bidPrice;
-        newQuantity.quantity = bidQuantity;
-        newQuantity.partialPrice = quantityObj.price;
-        newQuantity.partialQuantity = quantityObj.size;
-        newQuantity.order_code = 201;
+        // newQuantity.name = order_name;
+        // newQuantity.price = bidPrice;
+        // newQuantity.quantity = bidQuantity;
+        // newQuantity.partialPrice = quantityObj.price;
+        // newQuantity.partialQuantity = quantityObj.size;
+        // newQuantity.order_code = 201;
 
-        // return -1; // For invalid orders !
+        return -1; // For invalid orders !
 
     }
 
@@ -121,6 +122,7 @@ function trade(order_type,orderAsk,orderpartialBid,ordernewBid){
     let quantityObj = {};
 
     if(order_type === "perfect"){
+        console.log("Perfect Order...");
         quantityObj.price = result.taker.price;
         quantityObj.size = result.makers[0].size;
 

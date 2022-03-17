@@ -286,7 +286,7 @@ app.post("/place", unauthenticated, (request, response) => {
             } else {
                 // Calculate quantity for buy price
                 calculatedEntity = calculateQuantity(Number(request.body.price), Number(product.base_price));
-                if (calculatedEntity < product.base_quantity) {
+                if (calculatedEntity < product.base_quantity && Number(request.body.buyerBase_price) == product.base_price) {
                     // First order will be accepted !
                     buyOrder_success = true;
                 }
@@ -303,78 +303,264 @@ app.post("/place", unauthenticated, (request, response) => {
                         console.log(asset);
                         // Trading begins....
 
-                        if(request.body.type === "sell"){
+                        if (request.body.type === "sell") {
                             // Sell order section
                             // name,price,quantity
                             let sellOrderObject = {
-                                name : product.name,
-                                base_price : Number(request.body.sellerBase_price),
-                                price : calculatedEntity,
-                                quantity : Number(request.body.quantity),
-                                date : new Date().toString()
+                                id: Date.now(),
+                                name: product.name,
+                                base_price: Number(request.body.sellerBase_price),
+                                price: calculatedEntity,
+                                quantity: Number(request.body.quantity),
+                                date: new Date().toString()
                             }
 
-                            // Update Orderbook
-                            OrderBook.updateOne({
-                                name : product.name
-                            },{
-                                $push : {
-                                    sellOrders : sellOrderObject
-                                }
-                            },{
-                                $new : true
-                            })
-                                .then(()=>{
-                                    console.log("Order Updated !");
-                                    response.json({
-                                        message : "Sell Order placed"
-                                    })
+                            // Check quantity inside portfolio !
+                            User.findOne({ email: request.session.email })
+                                .then((user) => {
+
+                                    if (user.portfolio.length === 0) {
+                                        response.json({
+                                            message: "You can't sell this asset !"
+                                        })
+                                    } else {
+
+                                        let getIndex = user.portfolio.findIndex((asset) => asset.name === product.name);
+
+                                        if (getIndex < 0) {
+                                            response.json({
+                                                message: "You can't sell this asset !"
+                                            })
+                                        } else {
+                                            // Compare quantity
+                                            if (user.portfolio[getIndex].no_of_shares >= Number(request.body.quantity)) {
+                                                OrderBook.updateOne({
+                                                    name: product.name
+                                                }, {
+                                                    $push: {
+                                                        sellOrders: sellOrderObject
+                                                    }
+                                                }, {
+                                                    $new: true
+                                                })
+                                                    .then(() => {
+                                                        console.log("Order Updated !");
+                                                        User.updateOne({
+                                                            email: request.session.email
+                                                        }, {
+                                                            $set: { portfolio: { name: product.name, price: product.base_price, no_of_shares: user.portfolio[getIndex].no_of_shares - Number(request.body.quantity) } }
+                                                        }, {
+                                                            $new: true
+                                                        })
+                                                            .then(() => {
+                                                                response.json({
+                                                                    message: "Sell Order placed"
+                                                                })
+                                                            })
+                                                            .catch(err => console.log("Error: ", err));
+
+
+                                                    })
+                                                    .catch(err => console.log("Error: ", err));
+                                            } else {
+                                                // This means your quantity of asset is zero, that means you have to remove this asset from your portfolio !
+
+                                                User.updateOne({
+                                                    email: request.session.email
+                                                }, {
+                                                    $pull: { portfolio: { name: product.name } }
+                                                }, {
+                                                    $new: true
+                                                })
+                                                    .then(() => {
+                                                        console.log("Asset is removed !");
+                                                        response.json({
+                                                            message: "You can't sell this asset !"
+                                                        })
+
+                                                    })
+                                                    .catch(err => console.log("Error: ", err));
+
+                                            }
+                                        }
+
+                                    }
+
                                 })
-                                .catch(err=>console.log("Error: ",err));
-                        }else{
+                                .catch(err => console.log("Error: ", err));
+
+                        } else {
                             // Buy order section
-                            OrderBook.findOne({name : product.name})
-                                .then((order)=>{
+                            OrderBook.findOne({ name: product.name })
+                                .then((order) => {
                                     let sellOrders = order.sellOrders;
 
-                                    if(sellOrders.length === 0){
+                                    if (sellOrders.length === 0) {
                                         let buyOrderObject = {
-                                            name : product.name,
-                                            base_price : umber(request.body.buyerBase_price),
-                                            price : Number(request.body.price),
-                                            quantity : calculatedEntity,
-                                            date : new Date().toString()
+                                            id: Date.now(),
+                                            name: product.name,
+                                            base_price: Number(request.body.buyerBase_price),
+                                            price: Number(request.body.price),
+                                            quantity: calculatedEntity,
+                                            date: new Date().toString()
                                         }
                                         // Update Buy orders in orderbook
                                         OrderBook.updateOne({
-                                            name : product.name
-                                        },{
-                                            $push : {
-                                                buyOrders : buyOrderObject
+                                            name: product.name
+                                        }, {
+                                            $push: {
+                                                buyOrders: buyOrderObject
                                             }
-                                        },{
-                                            $new : true
+                                        }, {
+                                            $new: true
                                         })
-                                            .then(()=>{
+                                            .then(() => {
                                                 console.log("Order Updated !");
 
                                                 response.json({
-                                                    message : "Buy Order Placed"
+                                                    message: "Buy Order Placed"
                                                 })
                                             })
-                                            .catch(err=>console.log("Error: ",err));
-                                    }else{
+                                            .catch(err => console.log("Error: ", err));
+                                    } else {
                                         // Use price time priorty for selecting perfect sell order for our buy order !
                                         console.log("Sell Orders: ");
                                         console.log(sellOrders);
                                         let probable_sellOrder = pricetimepriorty(sellOrders);
+
+                                        let partialPrice = 0;
+                                        let partialQuantity = 0;
+
+                                        // Delete partial order if exists !
+                                        if (partialData.length != 0) {
+                                            partialPrice = partialData[0].price;
+                                            partialQuantity = partialData[0].quantity;
+                                            // Delete Partial Data array !
+                                            partialData.splice(0, 1);
+                                        }
+
+                                        console.log("Partial Price: ", partialPrice);
+                                        console.log("Partial Quantity: ", partialQuantity);
+
+                                        let newValuesObj = createOrderBook_result(probable_sellOrder.name, Number(probable_sellOrder.base_price), Number(probable_sellOrder.quantity), Number(request.body.buyerBase_price), Number(calculatedEntity), Number(partialPrice), Number(partialQuantity));
+
+                                        let updatedPrice, updatedQuantity = probable_sellOrder.quantity;
+                                        if (newValuesObj === -1) {
+                                            let buyOrderObject = {
+                                                id: Date.now(),
+                                                name: product.name,
+                                                base_price: Number(request.body.buyerBase_price),
+                                                price: Number(request.body.price),
+                                                quantity: calculatedEntity,
+                                                date: new Date().toString()
+                                            }
+                                            // Update Buy orders in orderbook
+                                            OrderBook.updateOne({
+                                                name: product.name
+                                            }, {
+                                                $push: {
+                                                    buyOrders: buyOrderObject
+                                                }
+                                            }, {
+                                                $new: true
+                                            })
+                                                .then(() => {
+                                                    console.log("Order Updated !");
+
+                                                    response.json({
+                                                        message: "Buy Order Placed"
+                                                    })
+                                                })
+                                                .catch(err => console.log("Error: ", err));
+                                        } else {  //When order matches or partially matches !
+                                            console.log("New Value Object Generated: ");
+                                            console.log(newValuesObj);
+
+                                            // Update Ask price if needed !
+                                            if (probable_sellOrder.base_price != newValuesObj.price) {
+                                                updatedPrice = newValuesObj.price; //Updated values of price !
+                                            }
+
+                                            // Update quantity 
+                                            // console.log("Ask Quantity: ", product.quantity);
+                                            console.log("New Object Quantity: ", newValuesObj.quantity);
+                                            if (probable_sellOrder.quantity != newValuesObj.quantity) {
+
+                                                console.log("Ready for partial Data !");
+                                                //Update quantity, insert partially matched item in partialData array !
+                                                updatedQuantity = newValuesObj.quantity; //Updated values of quantity !
+
+                                                if (newValuesObj.order_status === "Order is Partially Completed") {
+
+                                                    OrderBook.findOne({name : product.name})
+                                                        .then((asset)=>{
+                                                            let buyOrderObject = {
+                                                                id: Date.now(),
+                                                                name: product.name,
+                                                                base_price: Number(request.body.buyerBase_price),
+                                                                price: Number(request.body.price),
+                                                                quantity: updatedQuantity,
+                                                                date: new Date().toString()
+                                                            }
+                                                            // let getIndex = asset.buyOrders.findIndex(order=>order.id === );
+                                                            // @TODO - We have to update buyOrder which is stored previously, and we have to push buy order when it is fresh !
+                                                            OrderBook.updateOne({
+                                                                name : product.name
+                                                            },{
+                                                                $push : {buyOrders : buyOrderObject}
+                                                            },{
+                                                                $new : true
+                                                            })
+                                                             .then(()=>{
+                                                                 response.json({
+                                                                     message : "Partial Order Generated"
+                                                                 })
+                                                             })
+                                                             .catch(err=>console.log("Error :",err));
+                                                        })
+                                                        .catch(err=>console.log("Error: ",err));
+
+                                                }
+                                            } else {
+                                                console.log("Order is perfectly matched !");
+                                                // Remove respective buy and sell order from database after perfect trade and add buy order in user's portfolio !
+                                                OrderBook.updateOne({
+                                                    name: product.name
+                                                }, {
+                                                    $pull: { sellOrders: { id: probable_sellOrder.id } }
+                                                }, {
+                                                    $new: true
+                                                })
+                                                    .then(() => {
+                                                        // Add buy order in portfolio !
+                                                        User.updateOne({
+                                                            email: request.session.email
+                                                        }, {
+                                                            $push: { portfolio: { name: product.name, price: Number(request.body.buyerBase_price), no_of_shares: Number(calculatedEntity) } }
+                                                        }, {
+                                                            $new: true
+                                                        })
+                                                            .then(() => {
+                                                                response.json({
+                                                                    message: "Order got perfectly matched !"
+                                                                })
+                                                            })
+                                                            .catch(err => console.log("Error: ", err));
+
+                                                    })
+                                                    .catch(err => console.log("Error: ", err));
+                                            }
+
+
+
+                                        }
 
                                         // Trade
                                         // createOrderBook_result(probable_sellOrder.name, Number(probable_sellOrder.base_price), Number(probable_sellOrder.quantity), Number(bidPrice), Number(bidQuantity), Number(partialPrice), Number(partialQuantity));
 
                                     }
                                 })
-                                .catch(err=>console.log("Error: ",err));
+                                .catch(err => console.log("Error: ", err));
                         }
 
 
@@ -412,10 +598,12 @@ app.post("/place", unauthenticated, (request, response) => {
                                         let orderObject = {
                                             name: product.name,
                                             sellOrders: [{
-                                                name : product.name, 
-                                                base_price : product.base_price,
-                                                price :  Number(product.base_price) * Number(product.base_quantity),
-                                                quantity : product.base_quantity
+                                                id: Date.now(),
+                                                name: product.name,
+                                                base_price: product.base_price,
+                                                price: Number(product.base_price) * Number(product.base_quantity),
+                                                quantity: product.base_quantity,
+                                                date: new Date().toString()
                                             }],
                                             buyOrders: []
                                         }
@@ -430,6 +618,10 @@ app.post("/place", unauthenticated, (request, response) => {
 
                                     })
                                     .catch(err => console.log("Error: ", err));
+                            } else {
+                                response.json({
+                                    message: "Incorrect Details"
+                                })
                             }
 
 
