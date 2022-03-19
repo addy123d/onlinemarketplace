@@ -1,11 +1,11 @@
 
-function pricetimepriorty(sellOrders){
-  sellOrders.sort(pricecompare);
+function pricetimepriorty(Orders){
+  Orders.sort(pricecompare);
 
   console.log("After sorting: ");
-  console.log(sellOrders);
+  console.log(Orders);
 
-  return sellOrders[0]; // Probable sell order to match...after price-time comparison !
+  return Orders[0]; // Probable sell order to match...after price-time comparison !
 }
 
 

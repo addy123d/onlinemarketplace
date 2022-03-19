@@ -5,10 +5,12 @@ var Limit = function(price) {
     this.queue  = [];
   };
   
+  // 
   Limit.prototype.peek = function() {
     return this.queue[0];
   }
   
+  // 
   Limit.prototype.add = function(order) {
     this.map[order.orderId] = order;
     this.queue.push(order);
