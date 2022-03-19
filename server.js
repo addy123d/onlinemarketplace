@@ -450,6 +450,40 @@ app.post("/place", unauthenticated, (request, response) => {
 
                                                             }
 
+                                                        } else {
+
+                                                            OrderBook.updateOne({
+                                                                name: product.name
+                                                            }, {
+                                                                $push: {
+                                                                    sellOrders: sellOrderObject
+                                                                }
+                                                            }, {
+                                                                $new: true
+                                                            })
+                                                                .then(() => {
+                                                                    console.log("Order Updated !");
+                                                                    User.updateOne({
+                                                                        email: request.session.email
+                                                                    }, {
+                                                                        $set: { portfolio: { name: product.name, price: product.base_price, no_of_shares: user.portfolio[getIndex].no_of_shares - Number(request.body.quantity) } }
+                                                                    }, {
+                                                                        $new: true
+                                                                    })
+                                                                        .then(() => {
+                                                                            response.json({
+                                                                                message: "Sell Order placed"
+                                                                            })
+                                                                        })
+                                                                        .catch(err => console.log("Error: ", err));
+
+
+                                                                })
+                                                                .catch(err => console.log("Error: ", err));
+
+
+
+
                                                         }
                                                     })
                                                     .catch(err => console.log("Error: ", err));
