@@ -31,7 +31,7 @@ let app = express();
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(__dirname+"/client"));
+app.use(express.static(__dirname + "/client"));
 
 app.set("view engine", "ejs");
 
@@ -77,7 +77,7 @@ let partialData = [];
 // ip:port/home
 // app.use("/",express.static(__dirname + "/client"));
 
-app.get("/",(request,response)=>{
+app.get("/", (request, response) => {
     response.render("landing");
 })
 
@@ -206,12 +206,12 @@ app.post("/login", (request, response) => {
 
 })
 
-app.get("/portfolio",unauthenticated,(request,response)=>{
-    User.findOne({email : request.session.email})
-        .then((user)=>{
-            response.render("portfolio",{portfolio : user.portfolio});
+app.get("/portfolio", unauthenticated, (request, response) => {
+    User.findOne({ email: request.session.email })
+        .then((user) => {
+            response.render("portfolio", { portfolio: user.portfolio });
         })
-        .catch(err=>console.log("Error: ",err));
+        .catch(err => console.log("Error: ", err));
 })
 
 app.get("/placeorder", unauthenticated, (request, response) => {
@@ -972,9 +972,11 @@ app.post("/process", (request, response) => {
 })
 
 app.get("/admin", unauthenticated, (request, response) => {
-
-    response.render("admin");
-
+    if (request.session.adminAccess) {
+        response.render("admin");
+    } else {
+        response.redirect("/dashboard");
+    }
 });
 
 app.get("/logout", unauthenticated, (request, response) => {
