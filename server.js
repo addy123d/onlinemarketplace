@@ -31,6 +31,7 @@ let app = express();
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(express.static(__dirname+"/client"));
 
 app.set("view engine", "ejs");
 
@@ -57,7 +58,7 @@ function unauthenticated(request, response, next) {
 
 function authenticated(request, response, next) {
     if (request.session.email) {
-        response.redirect("/");
+        response.redirect("/dashboard");
     } else if (request.session.adminAccess) {
         response.redirect("/admin");
     } else {
@@ -76,7 +77,11 @@ let partialData = [];
 // ip:port/home
 // app.use("/",express.static(__dirname + "/client"));
 
-app.get("/", (request, response) => {
+app.get("/",(request,response)=>{
+    response.render("landing");
+})
+
+app.get("/dashboard", (request, response) => {
 
     let sessionStatus = false;
 
@@ -201,12 +206,13 @@ app.post("/login", (request, response) => {
 
 })
 
-
-// app.get("/bidForm", unauthenticated, (request, response) => {
-//     const productId = request.query.productID;
-
-//     response.render("bidform", { productId });
-// })
+app.get("/portfolio",unauthenticated,(request,response)=>{
+    User.findOne({email : request.session.email})
+        .then((user)=>{
+            response.render("portfolio",{portfolio : user.portfolio});
+        })
+        .catch(err=>console.log("Error: ",err));
+})
 
 app.get("/placeorder", unauthenticated, (request, response) => {
     const name = request.query.name;
@@ -480,10 +486,6 @@ app.post("/place", unauthenticated, (request, response) => {
 
                                                                 })
                                                                 .catch(err => console.log("Error: ", err));
-
-
-
-
                                                         }
                                                     })
                                                     .catch(err => console.log("Error: ", err));
@@ -543,7 +545,7 @@ app.post("/place", unauthenticated, (request, response) => {
                                                 console.log("Order Updated !");
 
                                                 response.json({
-                                                    message: "Buy Order Placed"
+                                                    message: "No Sell Order exists...Buy Order Placed"
                                                 })
                                             })
                                             .catch(err => console.log("Error: ", err));
@@ -595,7 +597,7 @@ app.post("/place", unauthenticated, (request, response) => {
                                                     console.log("Order Updated !");
 
                                                     response.json({
-                                                        message: "Buy Order Placed"
+                                                        message: "Trade didn't happen...Buy Order Placed !"
                                                     })
                                                 })
                                                 .catch(err => console.log("Error: ", err));
@@ -669,7 +671,7 @@ app.post("/place", unauthenticated, (request, response) => {
                                                         })
                                                             .then(() => {
                                                                 response.json({
-                                                                    message: "Order got perfectly matched !"
+                                                                    message: "Matched"
                                                                 })
                                                             })
                                                             .catch(err => console.log("Error: ", err));
@@ -978,11 +980,11 @@ app.get("/admin", unauthenticated, (request, response) => {
 app.get("/logout", unauthenticated, (request, response) => {
     request.session.destroy(function (err) {
         // cannot access session here
-        response.redirect("/login")
+        response.redirect("/")
     });
 })
 
 // Listening to port and host (Basically kicks on the server)
 app.listen(port, host, () => {
-    console.log("Server is running....");
+    console.log(`Server is running at ${port}`);
 })
