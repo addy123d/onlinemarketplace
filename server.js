@@ -665,14 +665,36 @@ app.post("/place", unauthenticated, (request, response) => {
                                                         User.updateOne({
                                                             email: request.session.email
                                                         }, {
-                                                            $push: { portfolio: { name: product.name, price: Number(request.body.buyerBase_price), no_of_shares: Number(calculatedEntity) } }
+                                                            $push: { portfolio: { name: product.name, price: Number(request.body.buyerBase_price), no_of_shares: Number(calculatedEtitny) } }
                                                         }, {
                                                             $new: true
                                                         })
                                                             .then(() => {
-                                                                response.json({
-                                                                    message: "Matched"
-                                                                })
+                                                                // Send mail to buyer
+                                                                subject = "Online Marketplace: Order Completed";
+                                                                order = "complete";
+                                                                body = `Hello ${request.session.user_name}, 
+                                                                    Your Order is Completed !
+                    
+                                                                    Product Name: ${product.productName}
+                                                                    Base Price: ${request.body.buyerBase_price}
+                                                                    Quantity: ${calculatedEtitny}`;
+
+                                                                buyerMail(request.session.email, subject, body, (err) => {
+                                                                    if (err) {
+                                                                        response.status(503).json({
+                                                                            message: `Mail Error`,
+                                                                            order: order
+                                                                        })
+                                                                    } else {
+                                                                        response.json({
+                                                                            message: "Matched"
+                                                                        })
+                                                                    }
+                                                                });
+
+
+
                                                             })
                                                             .catch(err => console.log("Error: ", err));
 
