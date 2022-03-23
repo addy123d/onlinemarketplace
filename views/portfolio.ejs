@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
     <title>Dashboard</title>
 </head>
 <style>
@@ -25,6 +27,19 @@
         background-attachment: fixed;
         background-size: cover;
         min-height: 100vh;
+    }
+
+    .title{
+        display: flex;
+        justify-content: flex-start;
+
+        margin-left: 5%;
+    }
+
+    .title h2{
+        background: #fff;
+        padding: 1em;
+        font-size: 2rem;
     }
 
     .grid {
@@ -126,6 +141,10 @@
             <div class="btn2">
                 <a href="/logout"><button>Logout</button></a>
             </div>
+        </div>
+
+        <div class="title">
+            <h2>Portfolio <i class="fa fa-area-chart" aria-hidden="true"></i></h2>
         </div>
 
         <div class="grid">

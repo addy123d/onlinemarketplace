@@ -665,7 +665,7 @@ app.post("/place", unauthenticated, (request, response) => {
                                                         User.updateOne({
                                                             email: request.session.email
                                                         }, {
-                                                            $push: { portfolio: { name: product.name, price: Number(request.body.buyerBase_price), no_of_shares: Number(calculatedEtitny) } }
+                                                            $push: { portfolio: { name: product.name, price: Number(request.body.buyerBase_price), no_of_shares: Number(calculatedEntity) } }
                                                         }, {
                                                             $new: true
                                                         })
