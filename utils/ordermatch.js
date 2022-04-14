@@ -45,17 +45,7 @@ if(partialQuantity === 0){
 
         return newQuantity;
     }else{
-        
-        // Limit (Minimal) Order (when bidprice ) 
-        // newQuantity.name = order_name;
-        // newQuantity.price = bidPrice;
-        // newQuantity.quantity = bidQuantity;
-        // newQuantity.partialPrice = quantityObj.price;
-        // newQuantity.partialQuantity = quantityObj.size;
-        // newQuantity.order_code = 201;
-
         return -1; // For invalid orders !
-
     }
 
 }else{
@@ -124,7 +114,7 @@ function trade(order_type,orderAsk,orderpartialBid,ordernewBid){
     if(order_type === "perfect"){
         console.log("Perfect Order...");
         quantityObj.price = result.taker.price;
-        quantityObj.size = result.makers[0].size;
+        quantityObj.size = result.makers[0].sizeRemaining;
 
         console.log("Quantity Object: ");
         console.log(quantityObj);

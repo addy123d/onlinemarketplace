@@ -1,6 +1,11 @@
 
 function pricetimepriorty(Orders){
-  Orders.sort(pricecompare);
+  if(Orders.type === "sell"){
+    Orders.sort(pricecompare);
+  }else{
+    Orders.sort(pricecompare_1);
+  }
+
 
   console.log("After sorting: ");
   console.log(Orders);
@@ -14,6 +19,16 @@ function pricecompare( a, b ) {
       return -1;
     }
     if ( a.base_price > b.base_price ){
+      return 1;
+    }
+    return 0;
+}
+
+function pricecompare_1( a, b ) {
+    if ( a.base_price > b.base_price ){
+      return -1;
+    }
+    if ( a.base_price < b.base_price ){
       return 1;
     }
     return 0;

@@ -20,6 +20,9 @@ const orderbookSchema = new schema({
         name: {
             type: String
         },
+        email : {
+            type : String
+        },
         base_price: {
             type: Number
         },
@@ -40,6 +43,9 @@ const orderbookSchema = new schema({
         },
         name: {
             type: String
+        },
+        email : {
+            type : String
         },
         base_price: {
             type: Number
