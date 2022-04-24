@@ -8,7 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
-    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <title>Order Tracking</title>
 </head>
 <style>
     * {
@@ -25,6 +27,19 @@
         background-attachment: fixed;
         background-size: cover;
         min-height: 100vh;
+    }
+
+    .title{
+        display: flex;
+        justify-content: flex-start;
+
+        margin-left: 5%;
+    }
+
+    .title h2{
+        background: #fff;
+        padding: 1em;
+        font-size: 2rem;
     }
 
     .grid {
@@ -123,64 +138,44 @@
     <section class="products">
 
         <div class="buttons">
-            <%if(sessionStatus){%>
+            <div class="btn2">
+                <a href="/logout"><button>Logout</button></a>
+            </div>
+        </div>
 
-                <div class="btn2">
-                    <a href="/logout"><button>Logout</button></a>
-                </div>
-                <div class="btn2">
-                    <a href="/portfolio"><button>Portfolio</button></a>
-                </div>
-                <div class="btn2">
-                    <button class="orders">Orders</button>
-                </div>
-                <%}else{%>
-                    <div class="btn1">
-                        <a href="/login"><button>Sign In</button></a>
-                    </div>
-                    <%}%>
+        <div class="title">
+            <h2>Order History <i class="fa fa-area-chart" aria-hidden="true"></i></h2>
         </div>
 
         <div class="grid">
 
-            <%for(let i=0; i < products.length; i++){%>
+            <%for(let i=0; i < orders.length; i++){%>
                 <article>
-                    <img src="<%=products[i].imgurl%>" alt="">
+                    <img src="https://img.search.brave.com/IS-MEBaxZHlpkiRK_0gQw-JyEJT4gPfmlk-3vYxzt1Q/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2Uy/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5E/QVY5d2ItQlliSkFo/MUl3cDNVeTVRSGFG/aiZwaWQ9QXBp"
+                        alt="">
                     <div class="content">
                         <div class="name">
-                            <p>Name: <%=products[i].name%>
+                            <p>Name: <%=orders[i].name%>
                             </p>
                         </div>
                         <div class="price">
-                            <p>Price: <%=products[i].base_price%>
+                            <p>Price: <%=orders[i].base_price%>
+                            </p>
+                        </div>
+                        <div class="price">
+                            <p>Type: <%=orders[i].type%>
                             </p>
                         </div>
                         <div class="quantity">
-                            <p>Quantity: <%=products[i].base_quantity%>
+                            <p>Quantity: <%=orders[i].quantity%>
                             </p>
                         </div>
                     </div>
-                    <a
-                        href="/placeorder?productID=<%=products[i]._id%>&type=bid&name=<%=products[i].name%>&price=<%=products[i].base_price%>"><button>
-                            <span> Bid
-                            </span></button></a>
-                    <a
-                        href="/placeorder?productID=<%=products[i]._id%>&type=sell&name=<%=products[i].name%>&price=<%=products[i].base_price%>"><button>
-                            <span> Sell
-                            </span></button></a>
                 </article>
                 <%}%>
         </div>
 
     </section>
 </body>
-<script>
-    const orderRedirect = document.querySelector(".orders");
 
-
-    orderRedirect.addEventListener("click",()=>{
-        let orderName = prompt("Asset Name: ");
-        location.href = `${location.origin}/orders?name=${orderName.toLowerCase()}`
-    })
-</script>
 </html>

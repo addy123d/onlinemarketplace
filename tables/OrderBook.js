@@ -17,6 +17,9 @@ const orderbookSchema = new schema({
             type: String,
             required: true
         },
+        type : {
+            type : String
+        },
         name: {
             type: String
         },
@@ -40,6 +43,9 @@ const orderbookSchema = new schema({
         id: {
             type: String,
             required: true
+        },
+        type : {
+            type : String
         },
         name: {
             type: String

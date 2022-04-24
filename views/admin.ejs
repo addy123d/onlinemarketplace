@@ -239,6 +239,10 @@
                 <i class="fa fa-vcard-o" aria-hidden="true"></i>
             </div>
             <div class="topic">
+                <input type="text" name="name" class="productImage" placeholder="Image URL" required>
+                <i class="fa fa-vcard-o" aria-hidden="true"></i>
+            </div>
+            <div class="topic">
                 <input type="text" name="price" class="productPrice" placeholder="Price" required>
                 <i class="fa fa-rupee" aria-hidden="true"></i>
             </div>
@@ -267,6 +271,7 @@
 
 <script>
     const product_name = document.querySelector(".productName");
+    const product_image = document.querySelector(".productImage");
     const product_price = document.querySelector(".productPrice");
     const product_quantity = document.querySelector(".productQuantity");
 
@@ -277,6 +282,7 @@
             method: "POST",
             body: JSON.stringify({
                 name: product_name.value,
+                imgurl : product_image.value,
                 base_price: product_price.value,
                 base_quantity: product_quantity.value
             }),

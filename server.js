@@ -223,7 +223,7 @@ app.get("/placeorder", unauthenticated, (request, response) => {
 })
 
 app.post("/adminData", (request, response) => {
-    let { name, base_price, base_quantity } = request.body;
+    let { name,imgurl, base_price, base_quantity } = request.body;
     name = name.toLowerCase();
     base_price = Number(base_price);
     base_quantity = Number(base_quantity);
@@ -244,6 +244,7 @@ app.post("/adminData", (request, response) => {
 
                     let productObject = {
                         name: name,
+                        imgurl : imgurl,
                         base_price: base_price,
                         base_quantity: base_quantity
                     }
@@ -874,6 +875,44 @@ app.post("/place", unauthenticated, (request, response) => {
 
 
 
+})
+
+app.get("/orders", unauthenticated, (request, response) => {
+    let { name } = request.query;
+    let { email } = request.session;
+
+    let orders = [];
+
+    OrderBook.findOne({ name: name })
+        .then((asset) => {
+
+            if (asset) {
+                // Sell orders !
+                asset.sellOrders.forEach(order => {
+                    if (order.email === email) {
+                        orders.push(order);
+                    }
+                });
+
+
+                //  Buy Orders
+                asset.buyOrders.forEach(order => {
+                    if (order.email === email) {
+                        orders.push(order);
+                    }
+                });
+
+                console.log("ORDERS: ");
+                console.log(orders);
+
+
+                response.render("orderHistory", { orders });
+            }else{
+                response.send("No Order History exists !");
+            }
+
+        })
+        .catch(err => console.log("Error: ", err));
 })
 
 // type - POST

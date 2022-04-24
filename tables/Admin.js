@@ -6,6 +6,9 @@ const baseSchema = new schema({
         type : String,
         required : true
     },
+    imgurl : {
+        type : String
+    },
     base_price : {
         type : Number,
         required : true
